@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+
+# Personal data — never commit
+us-days-analysis.md
+YLDWGD.pdf
+# Ignore images at root (personal screenshots)
+/*.png
+/*.jpg
+/*.jpeg
+
+# But allow committed screenshots in screenshots/
+!screenshots/
