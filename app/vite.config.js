@@ -8,14 +8,6 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '/api/seats': {
-          target: 'https://seats.aero',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/seats/, '/partnerapi'),
-          headers: {
-            'Partner-Authorization': env.SEATS_API_KEY,
-          },
-        },
         '/api': {
           target: `http://localhost:${apiPort}`,
           changeOrigin: true,
