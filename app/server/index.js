@@ -196,7 +196,7 @@ app.get('/api/cashbiz', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Travel agent API running on http://localhost:${PORT}`);
   if (!process.env.TRAVELPAYOUTS_TOKEN) {
     console.log('  ⚠ TRAVELPAYOUTS_TOKEN not set — cash prices disabled');
@@ -204,4 +204,13 @@ app.listen(PORT, () => {
   if (!process.env.SEATS_API_KEY) {
     console.log('  ⚠ SEATS_API_KEY not set — award search disabled');
   }
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n  ✖ Port ${PORT} is already in use — another instance may be running.`);
+    console.error(`    Fix: set PORT=<number> in .env (e.g. PORT=3002) and restart.\n`);
+    process.exit(1);
+  }
+  throw err;
 });

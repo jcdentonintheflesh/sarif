@@ -458,7 +458,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     setCashLoading(true);
     setCashPrices(null);
     try {
-      const res  = await fetch(`http://localhost:3001/api/cash?origin=${o}&destination=${d}&cabin=${cab}`);
+      const res  = await fetch(`/api/cash?origin=${o}&destination=${d}&cabin=${cab}`);
       const data = await res.json();
       setServerDown(false);
       if (data.error) { setCashPrices([]); return; }
@@ -476,7 +476,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     setPrices(null);
     try {
       const dateParam = dateFrom ? `&date=${dateFrom}` : '';
-      const res  = await fetch(`http://localhost:3001/api/cashbiz?origin=${o}&destination=${d}&cabin=${cab}${dateParam}`);
+      const res  = await fetch(`/api/cashbiz?origin=${o}&destination=${d}&cabin=${cab}${dateParam}`);
       const data = await res.json();
       setServerDown(false);
       if (data.error) { setPrices([]); return; }

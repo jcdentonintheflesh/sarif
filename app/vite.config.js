@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const apiPort = env.PORT || 3001;
   return {
     plugins: [react()],
     server: {
@@ -14,6 +15,10 @@ export default defineConfig(({ mode }) => {
           headers: {
             'Partner-Authorization': env.SEATS_API_KEY,
           },
+        },
+        '/api': {
+          target: `http://localhost:${apiPort}`,
+          changeOrigin: true,
         },
       },
     },
