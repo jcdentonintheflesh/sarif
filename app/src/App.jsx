@@ -54,7 +54,10 @@ export default function App() {
   const [citizenship,      setCitizenship]      = useState(() => DEMO_MODE ? 'neither' : (localStorage.getItem('sarif_citizenship') || 'neither'));
   const [setupDone,        setSetupDone]        = useState(() => DEMO_MODE ? false : !!localStorage.getItem('sarif_setup_done'));
   const [showSetup,        setShowSetup]        = useState(false);
-  const [onboardingDismissed, setOnboardingDismissed] = useState(() => DEMO_MODE || !!localStorage.getItem('sarif_onboarding_dismissed'));
+  // Existing users who already finished setup shouldn't see the onboarding banner
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() =>
+    DEMO_MODE || !!localStorage.getItem('sarif_onboarding_dismissed') || !!localStorage.getItem('sarif_setup_done')
+  );
 
   const hiddenTabIds = HIDDEN_TABS[citizenship] || [];
   const visibleTabs = TABS.filter(t => !hiddenTabIds.includes(t.id));
@@ -66,10 +69,21 @@ export default function App() {
     if (hiddenTabIds.includes(activeTab)) setActiveTab('overview');
   }, [citizenship]);
 
-  // Persist trips to localStorage — but if the array is empty and a data file
-  // exists, remove the key so the file seed is used on next reload.
-  useEffect(() => { if (!DEMO_MODE) { if (usTrips.length || !userData) localStorage.setItem('usTrips', JSON.stringify(usTrips)); else localStorage.removeItem('usTrips'); } }, [usTrips]);
-  useEffect(() => { if (!DEMO_MODE) { if (schengenTrips.length || !userData) localStorage.setItem('schengenTrips', JSON.stringify(schengenTrips)); else localStorage.removeItem('schengenTrips'); } }, [schengenTrips]);
+  // One-time migration: move misrouted trips to the correct array.
+  // Old bug: Trip History tab always added to usTrips regardless of zone dropdown.
+  useEffect(() => {
+    if (DEMO_MODE || localStorage.getItem('sarif_trips_migrated')) return;
+    const misroutedSchengen = usTrips.filter(t => t.zone === 'Schengen');
+    const misroutedUs = schengenTrips.filter(t => t.zone === 'US');
+    if (misroutedSchengen.length || misroutedUs.length) {
+      setUsTrips(prev => [...prev.filter(t => t.zone !== 'Schengen'), ...misroutedUs]);
+      setSchengenTrips(prev => [...prev.filter(t => t.zone !== 'US'), ...misroutedSchengen]);
+    }
+    localStorage.setItem('sarif_trips_migrated', '1');
+  }, []);
+
+  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('usTrips',          JSON.stringify(usTrips));          }, [usTrips]);
+  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('schengenTrips',    JSON.stringify(schengenTrips));    }, [schengenTrips]);
   useEffect(() => { if (!DEMO_MODE) localStorage.setItem('points',           JSON.stringify(points));           }, [points]);
   useEffect(() => { if (!DEMO_MODE) localStorage.setItem('userDestinations', JSON.stringify(userDestinations)); }, [userDestinations]);
 

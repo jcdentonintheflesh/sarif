@@ -118,5 +118,5 @@ export function computedTrips(trips) {
       durationDays: differenceInDays(departure, arrival),
       isActive: !t.departure,
     };
-  }).reverse(); // Most recent first
+  }).sort((a, b) => new Date(b.arrival) - new Date(a.arrival)); // Most recent first
 }
