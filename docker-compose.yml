@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  sarif:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sarif
+    ports:
+      - "0.0.0.0:5173:5173"   # Vite dev server (frontend) — all interfaces
+      - "0.0.0.0:3001:3001"   # Express API server — all interfaces
+    environment:
+      - SEATS_API_KEY=${SEATS_API_KEY:-}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY:-}
+      - TRAVELPAYOUTS_TOKEN=${TRAVELPAYOUTS_TOKEN:-}
+      - PORT=3001
+      - HOST=0.0.0.0
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app/src:/app/src        # Hot-reload frontend changes
+      - ./app/server:/app/server  # Hot-reload server changes
+    restart: unless-stopped
