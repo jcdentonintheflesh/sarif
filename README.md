@@ -29,21 +29,6 @@ Everything runs on your machine. No account, no cloud, no tracking.
 
 > macOS will show a security warning since the app isn't notarized yet. Right-click the app, click Open, then Open again. Standard for open-source apps outside the App Store.
 
-## Your data
-
-Trips, points, and settings are stored locally on your device. Browser version uses localStorage, desktop app uses its own storage.
-
-Your data persists through restarts, reboots, and updates.
-
-The desktop app and browser version have **separate storage** and don't sync with each other. If you're switching from the browser version to the desktop app, use the export/import in Settings to move your data over.
-
-**Backing up:** Settings (gear icon) > Export backup. Saves everything as a JSON file. Import backup to restore.
-
-**Things that will delete your data:**
-- Clicking "Start fresh" in Settings
-- Clearing browser data (web version)
-- Uninstalling the app without exporting first
-
 ## Run from source
 
 If you'd rather run from source or want to contribute:
@@ -87,6 +72,21 @@ For the desktop app, create a `.env` file in the `app/` folder (copy `.env.examp
 **Trip Planner** lets you simulate future trips against both US and Schengen limits before booking.
 
 ![Award Search](screenshots/sarif-search.png)
+
+## Your data
+
+Trips, points, and settings are stored locally on your device. Browser version uses localStorage, desktop app uses its own storage.
+
+Your data persists through restarts, reboots, and updates.
+
+The desktop app and browser version have **separate storage** and don't sync with each other. If you're switching from the browser version to the desktop app, use the export/import in Settings to move your data over.
+
+**Backing up:** Settings (gear icon) > Export backup. Saves everything as a JSON file. Import backup to restore.
+
+**Things that will delete your data:**
+- Clicking "Start fresh" in Settings
+- Clearing browser data (web version)
+- Uninstalling the app without exporting first
 
 ## Stack
 
