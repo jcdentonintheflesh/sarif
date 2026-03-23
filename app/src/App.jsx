@@ -19,7 +19,7 @@ import AwardSearch from './components/AwardSearch';
 import TripPlanner from './components/TripPlanner';
 import SetupModal from './components/SetupModal';
 import OnboardingBanner from './components/OnboardingBanner';
-import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings } from 'lucide-react';
+import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings, Shield, Flag, Fingerprint, Globe2 } from 'lucide-react';
 
 const TABS = [
   { id: 'overview',  label: 'Overview',        icon: BarChart2  },
@@ -30,7 +30,12 @@ const TABS = [
 ];
 
 // Citizenship controls which *tracking widgets* show, not which tabs are visible.
-const CITIZENSHIP_LABELS = { us: '🇺🇸 US', eu: '🇪🇺 EU', both: '🌐 Dual', neither: '🛂 Visitor' };
+const CITIZENSHIP_BADGES = {
+  us:      { label: 'US',      icon: Flag,        color: 'text-blue-400' },
+  eu:      { label: 'EU',      icon: Globe2,      color: 'text-emerald-400' },
+  both:    { label: 'Dual',    icon: Shield,      color: 'text-purple-400' },
+  neither: { label: 'Visitor', icon: Fingerprint,  color: 'text-slate-400' },
+};
 
 function loadState(key, fallback) {
   try {
@@ -88,6 +93,39 @@ export default function App() {
   function addPoint(program)          { setPoints(p => [...p, program]); }
   function removePoint(i)             { setPoints(p => p.filter((_, idx) => idx !== i)); }
 
+  function exportData() {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      usTrips, schengenTrips, points, userDestinations,
+      homeAirport, citizenship,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sarif-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.usTrips)          setUsTrips(data.usTrips);
+        if (data.schengenTrips)    setSchengenTrips(data.schengenTrips);
+        if (data.points)           setPoints(data.points);
+        if (data.userDestinations) setUserDestinations(data.userDestinations);
+        if (data.homeAirport)      { setHomeAirport(data.homeAirport); localStorage.setItem('sarif_home', data.homeAirport); }
+        if (data.citizenship)      { setCitizenship(data.citizenship); localStorage.setItem('sarif_citizenship', data.citizenship); }
+        setShowSetup(false);
+      } catch { /* invalid file, ignore */ }
+    };
+    reader.readAsText(file);
+  }
+
   function handleSetupComplete({ homeAirport: ap, clearData, citizenship: ct, restoreData }) {
     if (ct) {
       setCitizenship(ct);
@@ -134,6 +172,9 @@ export default function App() {
           isSampleData={isSampleData}
           hasFileData={!!userData}
           onComplete={handleSetupComplete}
+          onExport={exportData}
+          onImport={importData}
+          isSettings={setupDone}
         />
       )}
 
@@ -175,9 +216,16 @@ export default function App() {
                 {homeAirport}
               </span>
             )}
-            <span className="text-xs text-slate-500 bg-white/5 border border-white/8 px-2.5 py-1 rounded-lg">
-              {CITIZENSHIP_LABELS[citizenship] || CITIZENSHIP_LABELS.neither}
-            </span>
+            {(() => {
+              const badge = CITIZENSHIP_BADGES[citizenship] || CITIZENSHIP_BADGES.neither;
+              const Icon = badge.icon;
+              return (
+                <span className={`flex items-center gap-1.5 text-xs font-medium ${badge.color} bg-white/5 px-2.5 py-1 rounded-full`}>
+                  <Icon size={11} />
+                  {badge.label}
+                </span>
+              );
+            })()}
             <span className="text-xs text-slate-600">
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>

@@ -9,7 +9,44 @@
   <br>Award search, points tracking, US and Schengen stay counters. Runs locally.
 </p>
 
-## Quickstart
+<p align="center">
+  <a href="https://github.com/jcdentonintheflesh/sarif/releases/latest"><strong>Download the desktop app</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#run-from-source">Run from source</a>
+</p>
+
+---
+
+## Desktop app (recommended)
+
+The easiest way to use Sarif. One file, no terminal, no setup.
+
+1. Go to [**Releases**](https://github.com/jcdentonintheflesh/sarif/releases/latest)
+2. Download **Sarif-x.x.x-arm64.dmg** (macOS Apple Silicon) <!-- Windows .exe coming soon -->
+3. Open the .dmg, drag Sarif to Applications, launch it
+
+That's it. The app runs entirely on your machine — no account, no cloud, no tracking.
+
+> **Note:** macOS may show a security warning since the app isn't notarized. Right-click the app → Open → Open to bypass it. This is normal for open-source apps distributed outside the App Store.
+
+## Your data
+
+All your trips, points, and settings are stored **locally** on your device (in your browser's localStorage for the web version, or the app's own storage for the desktop version).
+
+**Your data survives:** app restarts, computer reboots, updates.
+
+**Your data does NOT sync** between the desktop app and the browser version — they use separate storage.
+
+**Back up your data:** Open Settings (gear icon) → **Export backup** to download a JSON file with everything. Use **Import backup** to restore it on any device or after a fresh install.
+
+**What can delete your data:**
+- Clicking "Start fresh" in Settings
+- Clearing your browser data (web version only)
+- Uninstalling the app without exporting first
+
+## Run from source
+
+If you prefer running from source or want to contribute:
 
 ```bash
 git clone https://github.com/jcdentonintheflesh/sarif.git
@@ -19,9 +56,9 @@ cp .env.example .env
 npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173). The app will walk you through setup — add your trips, points, and home airport from the UI. Append `?demo` to the URL to explore with sample data first.
+Open [localhost:5173](http://localhost:5173). The app will walk you through setup. Append `?demo` to the URL to explore with sample data first.
 
-Don't have Git? Click the green **Code** button on the repo page, hit **Download ZIP**, unzip it, and run the same commands starting from `cd sarif/app`.
+No Git? Click the green **Code** button → **Download ZIP**, unzip, and run the same commands from `cd sarif/app`.
 
 ## API keys (optional)
 
@@ -33,7 +70,9 @@ Works without any API keys. Award search and live prices turn on once you add th
 | `RAPIDAPI_KEY` | Business/PE cash prices | [Sky Scrapper on RapidAPI](https://rapidapi.com/apiheya/api/sky-scrapper) | Free (100 req/mo) or $8.99/mo (10k req) |
 | `TRAVELPAYOUTS_TOKEN` | Economy cash baseline | [travelpayouts.com](https://www.travelpayouts.com/developers/api) | Free |
 
-Add keys to `.env` and restart `npm run dev` — it runs both the frontend and the API server automatically.
+**Desktop app:** Create a file called `.env` in the `app/` folder with your keys (copy `.env.example` as a template). The desktop app reads keys from this file.
+
+**Web/source version:** Add keys to `.env` and restart `npm run dev`.
 
 ## Overview
 
@@ -51,20 +90,9 @@ Add keys to `.env` and restart `npm run dev` — it runs both the frontend and t
 
 ![Award Search](screenshots/sarif-search.png)
 
-No accounts, no cloud, no tracking. Data stays on your machine.
-
-## Data setup
-
-Add your data directly in the app:
-- **US trips** — get your entry/exit dates from [i94.cbp.dhs.gov](https://i94.cbp.dhs.gov), then add them in the Trip History tab
-- **Schengen stays** — add in the Schengen tab
-- **Points balances** — edit inline in the Points tab
-
-All data is stored in your browser's localStorage and never leaves your machine.
-
 ## Stack
 
-React 19, Vite, Tailwind CSS, Recharts, Express (API proxy), localStorage
+React 19, Vite, Tailwind CSS, Recharts, Express (API proxy), Electron (desktop), localStorage
 
 ## License
 

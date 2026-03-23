@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plane, X } from 'lucide-react';
+import { Plane, X, Flag, Globe2, Shield, Fingerprint, Download, Upload } from 'lucide-react';
 
-export default function SetupModal({ onComplete, isSampleData, hasFileData }) {
+export default function SetupModal({ onComplete, isSampleData, hasFileData, onExport, onImport, isSettings }) {
   const [airport, setAirport]       = useState('');
   const [clearData, setClearData]   = useState(true);
   const [citizenship, setCitizenship] = useState('neither');
@@ -88,23 +88,26 @@ export default function SetupModal({ onComplete, isSampleData, hasFileData }) {
             <p className="text-xs text-slate-500">Helps tailor which limits apply to you.</p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { val: 'us',      label: '🇺🇸 US citizen',      sub: '' },
-                { val: 'eu',      label: '🇪🇺 EU / Schengen',    sub: '' },
-                { val: 'both',    label: '🌐 Both',              sub: 'No entry limits' },
-                { val: 'neither', label: '🛂 Neither',           sub: 'All limits apply' },
-              ].map(({ val, label, sub }) => (
+                { val: 'us',      icon: Flag,        color: 'text-blue-400',    label: 'US citizen',      sub: '' },
+                { val: 'eu',      icon: Globe2,      color: 'text-emerald-400', label: 'EU / Schengen',   sub: '' },
+                { val: 'both',    icon: Shield,      color: 'text-purple-400',  label: 'Both',            sub: 'No entry limits' },
+                { val: 'neither', icon: Fingerprint,  color: 'text-slate-400',   label: 'Neither',         sub: 'All limits apply' },
+              ].map(({ val, icon: Icon, color, label, sub }) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setCitizenship(val)}
-                  className={`flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                     citizenship === val
                       ? 'border-blue-500 bg-blue-500/10'
                       : 'border-slate-700 bg-white/3 hover:border-slate-500'
                   }`}
                 >
-                  <span className="text-xs font-medium text-slate-200">{label}</span>
-                  {sub && <span className="text-xs text-slate-500">{sub}</span>}
+                  <Icon size={14} className={`shrink-0 ${citizenship === val ? 'text-blue-400' : color}`} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-medium text-slate-200">{label}</span>
+                    {sub && <span className="text-xs text-slate-500">{sub}</span>}
+                  </div>
                 </button>
               ))}
             </div>
@@ -165,6 +168,34 @@ export default function SetupModal({ onComplete, isSampleData, hasFileData }) {
               <span className="text-xs font-semibold text-emerald-400">Restore trip data from file</span>
               <p className="text-xs text-emerald-300/60 mt-0.5">Re-import trips from your travelHistory.js data file</p>
             </button>
+          )}
+
+          {/* Export / Import */}
+          {isSettings && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-200 block">Your data</label>
+              <p className="text-xs text-slate-500">All data is stored locally in your browser. Export a backup to keep it safe.</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onExport}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-white/3 hover:border-slate-500 px-3 py-2.5 transition-colors"
+                >
+                  <Download size={13} className="text-blue-400" />
+                  <span className="text-xs font-medium text-slate-200">Export backup</span>
+                </button>
+                <label className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-white/3 hover:border-slate-500 px-3 py-2.5 transition-colors cursor-pointer">
+                  <Upload size={13} className="text-emerald-400" />
+                  <span className="text-xs font-medium text-slate-200">Import backup</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    className="sr-only"
+                    onChange={e => { if (e.target.files[0]) onImport(e.target.files[0]); }}
+                  />
+                </label>
+              </div>
+            </div>
           )}
 
           {/* Actions */}

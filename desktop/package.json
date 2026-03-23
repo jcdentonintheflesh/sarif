@@ -1,0 +1,24 @@
+{
+  "name": "sarif-desktop",
+  "version": "1.0.0",
+  "description": "Sarif — Travel Intelligence Dashboard (Desktop)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "dev": "electron .",
+    "prebuild": "cd ../app && npm run build",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "electron": "^35.0.1",
+    "electron-builder": "^26.0.12"
+  }
+}
