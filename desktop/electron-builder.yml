@@ -2,6 +2,11 @@ appId: com.sarif.desktop
 productName: Sarif
 copyright: Copyright © 2026
 
+publish:
+  provider: github
+  owner: jcdentonintheflesh
+  repo: sarif
+
 directories:
   output: release
 

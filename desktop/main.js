@@ -1,5 +1,6 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 
 // Load .env — from extraResources when packaged, from ../app/.env when running locally
 const envPath = app.isPackaged
@@ -266,11 +267,50 @@ function createWindow() {
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
+// ── Auto-update ──────────────────────────────────────────────────────────────
+
+function setupAutoUpdate() {
+  if (IS_DEV || !app.isPackaged) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    console.log(`[Sarif] Update available: v${info.version}`);
+    if (mainWindow) {
+      mainWindow.webContents.executeJavaScript(
+        `document.dispatchEvent(new CustomEvent('sarif-update', { detail: { status: 'downloading', version: '${info.version}' } }))`
+      );
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log(`[Sarif] Update downloaded: v${info.version}`);
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update ready',
+      message: `Sarif v${info.version} has been downloaded.`,
+      detail: 'Restart now to apply the update. Your data is safe.',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.log('[Sarif] Update check failed:', err.message);
+  });
+
+  autoUpdater.checkForUpdates();
+}
+
 // ── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
   await startServer();
   createWindow();
+  setupAutoUpdate();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
