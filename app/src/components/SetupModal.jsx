@@ -1,11 +1,25 @@
 import { useState } from 'react';
-import { Plane, X, Flag, Globe2, Shield, Fingerprint, Download, Upload } from 'lucide-react';
+import { Plane, X, Flag, Globe2, Shield, Fingerprint, Download, Upload, Key, ExternalLink } from 'lucide-react';
+
+const API_KEY_FIELDS = [
+  { key: 'SEATS_API_KEY',       label: 'Seats.aero',     placeholder: 'Partner API key', link: 'https://seats.aero', note: 'Award search ($9.99/mo)' },
+  { key: 'RAPIDAPI_KEY',        label: 'RapidAPI',        placeholder: 'API key',         link: 'https://rapidapi.com/apiheya/api/sky-scrapper', note: 'Business/PE cash prices (free tier)' },
+  { key: 'TRAVELPAYOUTS_TOKEN', label: 'Travelpayouts',   placeholder: 'API token',       link: 'https://www.travelpayouts.com/developers/api', note: 'Economy cash prices (free)' },
+];
+
+function loadApiKeys() {
+  try {
+    return JSON.parse(localStorage.getItem('sarif_api_keys') || '{}');
+  } catch { return {}; }
+}
 
 export default function SetupModal({ onComplete, isSampleData, hasFileData, onExport, onImport, isSettings }) {
   const [airport, setAirport]       = useState('');
   const [clearData, setClearData]   = useState(true);
   const [citizenship, setCitizenship] = useState('neither');
   const [error, setError]           = useState('');
+  const [apiKeys, setApiKeys]       = useState(loadApiKeys);
+  const [keysSaved, setKeysSaved]   = useState(false);
 
   function validate(val) {
     return /^[A-Za-z]{3,4}$/.test(val.trim());
@@ -168,6 +182,54 @@ export default function SetupModal({ onComplete, isSampleData, hasFileData, onEx
               <span className="text-xs font-semibold text-emerald-400">Restore trip data from file</span>
               <p className="text-xs text-emerald-300/60 mt-0.5">Re-import trips from your travelHistory.js data file</p>
             </button>
+          )}
+
+          {/* API Keys */}
+          {isSettings && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Key size={13} className="text-slate-400" />
+                <label className="text-sm font-medium text-slate-200">API keys</label>
+              </div>
+              <p className="text-xs text-slate-500">Optional. Enables award search and live cash prices. Keys are stored locally.</p>
+              <div className="space-y-2">
+                {API_KEY_FIELDS.map(({ key, label, placeholder, link, note }) => (
+                  <div key={key} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">{label}</span>
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-blue-400 transition-colors">
+                        <ExternalLink size={10} />
+                      </a>
+                      <span className="text-xs text-slate-600">{note}</span>
+                    </div>
+                    <input
+                      type="password"
+                      value={apiKeys[key] || ''}
+                      placeholder={placeholder}
+                      onChange={e => {
+                        setApiKeys(prev => ({ ...prev, [key]: e.target.value }));
+                        setKeysSaved(false);
+                      }}
+                      className="w-full bg-slate-800/60 border border-slate-600 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('sarif_api_keys', JSON.stringify(apiKeys));
+                  setKeysSaved(true);
+                }}
+                className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                  keysSaved
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                    : 'bg-blue-600 hover:bg-blue-500 text-white'
+                }`}
+              >
+                {keysSaved ? 'Saved' : 'Save keys'}
+              </button>
+            </div>
           )}
 
           {/* Export / Import */}

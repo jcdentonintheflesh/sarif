@@ -14,7 +14,7 @@ const searchCache = new Map(); // key → { data, ts }
 const CACHE_TTL   = 10 * 60 * 1000; // 10 minutes
 
 app.get('/api/seats/search', async (req, res) => {
-  const KEY   = process.env.SEATS_API_KEY;
+  const KEY   = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
   const query = new URLSearchParams(req.query);
   query.set('take', '300');
   const cacheKey = query.toString();
@@ -46,7 +46,7 @@ app.get('/api/seats/*splat', async (req, res) => {
   const url   = `https://seats.aero/partnerapi${path}${query ? '?' + query : ''}`;
   try {
     const r    = await fetch(url, {
-      headers: { 'Partner-Authorization': process.env.SEATS_API_KEY },
+      headers: { 'Partner-Authorization': req.headers['x-seats-key'] || process.env.SEATS_API_KEY },
     });
     const text = await r.text();
     if (!r.ok) throw new Error(`Seats.aero ${r.status}: ${text.slice(0, 120)}`);
@@ -61,7 +61,7 @@ app.get('/api/seats/*splat', async (req, res) => {
 // Note: Travelpayouts data covers economy fares; useful as a cash price baseline
 
 app.get('/api/cash', async (req, res) => {
-  const TOKEN = process.env.TRAVELPAYOUTS_TOKEN;
+  const TOKEN = req.headers['x-travelpayouts-key'] || process.env.TRAVELPAYOUTS_TOKEN;
   if (!TOKEN) {
     return res.status(503).json({ error: true, message: 'TRAVELPAYOUTS_TOKEN not set in .env' });
   }
@@ -134,7 +134,7 @@ async function getAirportEntity(iata, key) {
 }
 
 app.get('/api/cashbiz', async (req, res) => {
-  const KEY = process.env.RAPIDAPI_KEY;
+  const KEY = req.headers['x-rapidapi-key'] || process.env.RAPIDAPI_KEY;
   if (!KEY) return res.status(503).json({ error: true, message: 'RAPIDAPI_KEY not set — sign up free at rapidapi.com and subscribe to sky-scrapper' });
 
   const { origin, destination, date, cabin = 'J' } = req.query;

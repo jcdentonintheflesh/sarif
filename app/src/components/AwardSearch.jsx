@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, ExternalLink, Zap, DollarSign, RefreshCw, ArrowLeftRight, Calendar, Plus, X } from 'lucide-react';
+import apiFetch from '../utils/apiFetch';
 
 const PROGRAMS = {
   flyingblue:     { name: 'Flying Blue',          transferFrom: ['Amex MR', 'Chase UR'], bookUrl: 'https://www.flyingblue.com' },
@@ -172,7 +173,7 @@ function CabinFareRow({ label, prices, loading, highlight }) {
         <span className={highlight ? 'text-slate-300 font-medium' : 'text-slate-500'}>{label}</span>
         {loading && <span className="flex items-center gap-1 text-slate-600"><RefreshCw size={12} className="animate-spin" /> fetching...</span>}
         {prices !== null && !loading && <span className="text-slate-600">· Sky Scrapper</span>}
-        {noKey && <span className="text-slate-600">· <a href="https://rapidapi.com/apiheya/api/sky-scrapper" target="_blank" rel="noopener noreferrer" className="text-blue-400/70 hover:text-blue-400 transition-colors">add RAPIDAPI_KEY to .env</a></span>}
+        {noKey && <span className="text-slate-600">· add RAPIDAPI_KEY in Settings</span>}
       </div>
       {prices?.length > 0 && (
         <div className="flex gap-2 flex-wrap">
@@ -458,7 +459,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     setCashLoading(true);
     setCashPrices(null);
     try {
-      const res  = await fetch(`/api/cash?origin=${o}&destination=${d}&cabin=${cab}`);
+      const res  = await apiFetch(`/api/cash?origin=${o}&destination=${d}&cabin=${cab}`);
       const data = await res.json();
       setServerDown(false);
       if (data.error) { setCashPrices([]); return; }
@@ -476,7 +477,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     setPrices(null);
     try {
       const dateParam = dateFrom ? `&date=${dateFrom}` : '';
-      const res  = await fetch(`/api/cashbiz?origin=${o}&destination=${d}&cabin=${cab}${dateParam}`);
+      const res  = await apiFetch(`/api/cashbiz?origin=${o}&destination=${d}&cabin=${cab}${dateParam}`);
       const data = await res.json();
       setServerDown(false);
       if (data.error) { setPrices([]); return; }
@@ -511,9 +512,9 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
 
     try {
       const fetches = [
-        fetch(`/api/seats/search?origin_airport=${o}&destination_airport=${d}${dateParams}`).then(async r => { const t = await r.text(); try { return JSON.parse(t); } catch { throw new Error(t.slice(0, 120)); } }),
+        apiFetch(`/api/seats/search?origin_airport=${o}&destination_airport=${d}${dateParams}`).then(async r => { const t = await r.text(); try { return JSON.parse(t); } catch { throw new Error(t.slice(0, 120)); } }),
         isRoundTrip
-          ? fetch(`/api/seats/search?origin_airport=${d}&destination_airport=${o}${dateParams}`).then(async r => { const t = await r.text(); try { return JSON.parse(t); } catch { throw new Error(t.slice(0, 120)); } })
+          ? apiFetch(`/api/seats/search?origin_airport=${d}&destination_airport=${o}${dateParams}`).then(async r => { const t = await r.text(); try { return JSON.parse(t); } catch { throw new Error(t.slice(0, 120)); } })
           : Promise.resolve(null),
       ];
       const [outData, retData] = await Promise.all(fetches);

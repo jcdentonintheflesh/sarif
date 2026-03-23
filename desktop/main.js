@@ -31,7 +31,7 @@ function startServer() {
     const CACHE_TTL = 10 * 60 * 1000;
 
     server.get('/api/seats/search', async (req, res) => {
-      const KEY = process.env.SEATS_API_KEY;
+      const KEY = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
       const query = new URLSearchParams(req.query);
       query.set('take', '300');
       const cacheKey = query.toString();
@@ -62,7 +62,7 @@ function startServer() {
       const url = `https://seats.aero/partnerapi${splatPath}${query ? '?' + query : ''}`;
       try {
         const r = await fetch(url, {
-          headers: { 'Partner-Authorization': process.env.SEATS_API_KEY },
+          headers: { 'Partner-Authorization': req.headers['x-seats-key'] || process.env.SEATS_API_KEY },
         });
         const text = await r.text();
         if (!r.ok) throw new Error(`Seats.aero ${r.status}: ${text.slice(0, 120)}`);
@@ -75,7 +75,7 @@ function startServer() {
 
     // ── Travelpayouts cash prices ─────────────────────────────────────────
     server.get('/api/cash', async (req, res) => {
-      const TOKEN = process.env.TRAVELPAYOUTS_TOKEN;
+      const TOKEN = req.headers['x-travelpayouts-key'] || process.env.TRAVELPAYOUTS_TOKEN;
       if (!TOKEN) return res.status(503).json({ error: true, message: 'TRAVELPAYOUTS_TOKEN not set' });
 
       const { origin, destination } = req.query;
@@ -138,7 +138,7 @@ function startServer() {
     }
 
     server.get('/api/cashbiz', async (req, res) => {
-      const KEY = process.env.RAPIDAPI_KEY;
+      const KEY = req.headers['x-rapidapi-key'] || process.env.RAPIDAPI_KEY;
       if (!KEY) return res.status(503).json({ error: true, message: 'RAPIDAPI_KEY not set' });
 
       const { origin, destination, date, cabin = 'J' } = req.query;
