@@ -30,6 +30,7 @@ function startServer() {
     // ── Seats.aero proxy ──────────────────────────────────────────────────
     const searchCache = new Map();
     const CACHE_TTL = 10 * 60 * 1000;
+    const CACHE_MAX = 200;
 
     server.get('/api/seats/search', async (req, res) => {
       const KEY = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
@@ -50,6 +51,7 @@ function startServer() {
         const data = JSON.parse(text);
         if (data.error) throw new Error(data.message || 'Seats.aero error');
         const result = data.data || [];
+        if (searchCache.size >= CACHE_MAX) searchCache.delete(searchCache.keys().next().value);
         searchCache.set(cacheKey, { data: result, ts: Date.now() });
         res.json({ data: result });
       } catch (e) {
@@ -276,12 +278,8 @@ function setupAutoUpdate() {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('update-available', (info) => {
-    console.log(`[Sarif] Update available: v${info.version}`);
-    if (mainWindow) {
-      mainWindow.webContents.executeJavaScript(
-        `document.dispatchEvent(new CustomEvent('sarif-update', { detail: { status: 'downloading', version: '${info.version}' } }))`
-      );
-    }
+    const ver = String(info.version).replace(/[^a-zA-Z0-9.\-]/g, '');
+    console.log(`[Sarif] Update available: v${ver}`);
   });
 
   autoUpdater.on('update-downloaded', (info) => {

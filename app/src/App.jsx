@@ -94,11 +94,14 @@ export default function App() {
   function removePoint(i)             { setPoints(p => p.filter((_, idx) => idx !== i)); }
 
   function exportData() {
+    let apiKeys = {};
+    try { apiKeys = JSON.parse(localStorage.getItem('sarif_api_keys') || '{}'); } catch { /* ignore */ }
     const data = {
       version: 1,
       exportedAt: new Date().toISOString(),
       usTrips, schengenTrips, points, userDestinations,
       homeAirport, citizenship,
+      ...(Object.keys(apiKeys).length > 0 ? { apiKeys } : {}),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -110,20 +113,39 @@ export default function App() {
   }
 
   function importData(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.usTrips)          setUsTrips(data.usTrips);
-        if (data.schengenTrips)    setSchengenTrips(data.schengenTrips);
-        if (data.points)           setPoints(data.points);
-        if (data.userDestinations) setUserDestinations(data.userDestinations);
-        if (data.homeAirport)      { setHomeAirport(data.homeAirport); localStorage.setItem('sarif_home', data.homeAirport); }
-        if (data.citizenship)      { setCitizenship(data.citizenship); localStorage.setItem('sarif_citizenship', data.citizenship); }
-        setShowSetup(false);
-      } catch { /* invalid file, ignore */ }
-    };
-    reader.readAsText(file);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.version || typeof data !== 'object') {
+            resolve('Not a valid Sarif backup file.');
+            return;
+          }
+          if (Array.isArray(data.usTrips))          setUsTrips(data.usTrips);
+          if (Array.isArray(data.schengenTrips))    setSchengenTrips(data.schengenTrips);
+          if (Array.isArray(data.points))           setPoints(data.points);
+          if (Array.isArray(data.userDestinations)) setUserDestinations(data.userDestinations);
+          if (data.homeAirport && typeof data.homeAirport === 'string') {
+            setHomeAirport(data.homeAirport);
+            localStorage.setItem('sarif_home', data.homeAirport);
+          }
+          if (data.citizenship && typeof data.citizenship === 'string') {
+            setCitizenship(data.citizenship);
+            localStorage.setItem('sarif_citizenship', data.citizenship);
+          }
+          if (data.apiKeys && typeof data.apiKeys === 'object') {
+            localStorage.setItem('sarif_api_keys', JSON.stringify(data.apiKeys));
+          }
+          setShowSetup(false);
+          resolve(null);
+        } catch {
+          resolve('Could not read file. Make sure it\'s a Sarif backup JSON.');
+        }
+      };
+      reader.onerror = () => resolve('Failed to read file.');
+      reader.readAsText(file);
+    });
   }
 
   function handleSetupComplete({ homeAirport: ap, clearData, citizenship: ct, restoreData }) {
@@ -174,7 +196,10 @@ export default function App() {
           onComplete={handleSetupComplete}
           onExport={exportData}
           onImport={importData}
+          onClose={() => setShowSetup(false)}
           isSettings={setupDone}
+          currentAirport={homeAirport}
+          currentCitizenship={citizenship}
         />
       )}
 

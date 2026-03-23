@@ -22,8 +22,10 @@
 Easiest way to get started. One file, no terminal needed.
 
 1. Go to [**Releases**](https://github.com/jcdentonintheflesh/sarif/releases/latest)
-2. Download **Sarif-x.x.x-arm64.dmg** (macOS Apple Silicon) <!-- Windows coming soon -->
+2. Download the **.dmg** file (macOS Apple Silicon)
 3. Open the .dmg, drag Sarif to Applications, done
+
+Windows support is coming soon.
 
 Everything runs on your machine. No account, no cloud, no tracking.
 
@@ -55,7 +57,9 @@ Everything works without API keys. Award search and live prices light up once yo
 | `RAPIDAPI_KEY` | Business/PE cash prices | [Sky Scrapper on RapidAPI](https://rapidapi.com/apiheya/api/sky-scrapper) | Free (100 req/mo) or $8.99/mo (10k req) |
 | `TRAVELPAYOUTS_TOKEN` | Economy cash baseline | [travelpayouts.com](https://www.travelpayouts.com/developers/api) | Free |
 
-For the desktop app, create a `.env` file in the `app/` folder (copy `.env.example` as a starting point). For the web version, same thing, then restart `npm run dev`.
+**Desktop app:** Add keys from Settings (gear icon) in the app. No file editing needed.
+
+**Running from source:** Either add keys in Settings, or put them in `app/.env` (copy `.env.example`) and restart `npm run dev`.
 
 ## Overview
 

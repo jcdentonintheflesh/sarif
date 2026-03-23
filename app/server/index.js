@@ -12,6 +12,7 @@ app.use(express.json());
 
 const searchCache = new Map(); // key → { data, ts }
 const CACHE_TTL   = 10 * 60 * 1000; // 10 minutes
+const CACHE_MAX   = 200;
 
 app.get('/api/seats/search', async (req, res) => {
   const KEY   = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
@@ -32,6 +33,7 @@ app.get('/api/seats/search', async (req, res) => {
     const data = JSON.parse(text);
     if (data.error) throw new Error(data.message || 'Seats.aero error');
     const result = data.data || [];
+    if (searchCache.size >= CACHE_MAX) searchCache.delete(searchCache.keys().next().value);
     searchCache.set(cacheKey, { data: result, ts: Date.now() });
     res.json({ data: result });
   } catch (e) {
