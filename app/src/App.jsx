@@ -29,7 +29,17 @@ const TABS = [
   { id: 'points',    label: 'Points',            icon: CreditCard },
 ];
 
-// Citizenship controls which *tracking widgets* show, not which tabs are visible.
+// Which tabs to hide based on citizenship:
+// US citizens don't need the US trip tracker (no ESTA/B2 limits)
+// EU citizens don't need Schengen tracker (no 90/180 limits)
+// Dual citizens need neither tracker
+const HIDDEN_TABS = {
+  us:      ['trips'],
+  eu:      ['schengen'],
+  both:    ['trips', 'schengen'],
+  neither: [],
+};
+
 const CITIZENSHIP_BADGES = {
   us:      { label: 'US',      icon: Flag,        color: 'text-blue-400' },
   eu:      { label: 'EU',      icon: Globe2,      color: 'text-emerald-400' },
@@ -59,9 +69,16 @@ export default function App() {
     DEMO_MODE || !!localStorage.getItem('sarif_onboarding_dismissed') || !!localStorage.getItem('sarif_setup_done')
   );
 
-  // Citizenship controls tracking widgets, not tab visibility
+  // Citizenship controls both tab visibility and tracking widgets
+  const hiddenTabs = HIDDEN_TABS[citizenship] || [];
+  const visibleTabs = TABS.filter(t => !hiddenTabs.includes(t.id));
   const showUsTracking = citizenship !== 'us' && citizenship !== 'both';
   const showSchengenTracking = citizenship !== 'eu' && citizenship !== 'both';
+
+  // Redirect to overview if the current tab gets hidden after a citizenship change
+  useEffect(() => {
+    if (hiddenTabs.includes(activeTab)) setActiveTab('overview');
+  }, [citizenship]);
 
   // One-time migration: move misrouted trips to the correct array.
   // Old bug: Trip History tab always added to usTrips regardless of zone dropdown.
@@ -268,7 +285,7 @@ export default function App() {
       {/* Tabs */}
       <div className="border-b border-white/5 px-6">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {TABS.map(tab => {
+          {visibleTabs.map(tab => {
             const Icon = tab.icon;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -292,6 +309,7 @@ export default function App() {
         {setupDone && !onboardingDismissed && !DEMO_MODE && (
           <div className="mb-5">
             <OnboardingBanner
+              citizenship={citizenship}
               onNavigate={setActiveTab}
               onDismiss={() => {
                 setOnboardingDismissed(true);
@@ -304,10 +322,12 @@ export default function App() {
         {activeTab === 'overview' && (
           <div className="space-y-5">
             {showUsTracking && <StatusBar trips={usTrips} />}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-              {showUsTracking && <YearlyChart trips={usTrips} />}
-              <SchengenTracker trips={schengenTrips} onAdd={addSchengenTrip} citizenship={citizenship} />
-            </div>
+            {(showUsTracking || showSchengenTracking) && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {showUsTracking && <YearlyChart trips={usTrips} />}
+                {showSchengenTracking && <SchengenTracker trips={schengenTrips} onAdd={addSchengenTrip} citizenship={citizenship} />}
+              </div>
+            )}
             <TripPlanner usTrips={usTrips} schengenTrips={schengenTrips} citizenship={citizenship} />
             {/* Compact points summary */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
