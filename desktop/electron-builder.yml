@@ -1,0 +1,57 @@
+appId: com.sarif.desktop
+productName: Sarif
+copyright: Copyright © 2026
+
+publish:
+  provider: github
+  owner: jcdentonintheflesh
+  repo: sarif
+
+directories:
+  output: release
+
+files:
+  - main.js
+  - preload.js
+  - package.json
+  - node_modules/**/*
+
+extraResources:
+  - from: ../app/dist
+    to: app-dist
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.travel
+  target:
+    - dmg
+    - zip
+  icon: icons/icon.icns
+  darkModeSupport: true
+
+win:
+  target:
+    - nsis
+  icon: icons/icon.ico
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: icons
+  category: Utility
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

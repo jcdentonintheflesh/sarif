@@ -9,7 +9,38 @@
   <br>Award search, points tracking, US and Schengen stay counters. Runs locally.
 </p>
 
-## Quickstart
+<p align="center">
+  <a href="https://github.com/jcdentonintheflesh/sarif/releases/latest"><strong>Download the desktop app</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#run-from-source">Run from source</a>
+</p>
+
+---
+
+## Desktop app (recommended)
+
+Easiest way to get started. One file, no terminal needed.
+
+1. Go to [**Releases**](https://github.com/jcdentonintheflesh/sarif/releases/latest)
+2. Download the **.dmg** file (macOS Apple Silicon)
+3. Open the .dmg, drag Sarif to Applications, done
+
+Windows support is coming soon.
+
+Everything runs on your machine. No account, no cloud, no tracking.
+
+> **macOS security warning:** The app isn't notarized yet (standard for open-source apps outside the App Store). On first launch, macOS will block it. To open:
+>
+> 1. Try opening Sarif (it will be blocked)
+> 2. Open **System Settings > Privacy & Security**
+> 3. Scroll down, you'll see "Sarif was blocked" with an **Open Anyway** button
+> 4. Click it, enter your password, and you're set
+>
+> You only need to do this once. Notarization is on the roadmap.
+
+## Run from source
+
+If you'd rather run from source or want to contribute:
 
 ```bash
 git clone https://github.com/jcdentonintheflesh/sarif.git
@@ -19,13 +50,13 @@ cp .env.example .env
 npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173). The app will walk you through setup — add your trips, points, and home airport from the UI. Append `?demo` to the URL to explore with sample data first.
+Open [localhost:5173](http://localhost:5173). The app walks you through setup. Add `?demo` to the URL to try it with sample data first.
 
-Don't have Git? Click the green **Code** button on the repo page, hit **Download ZIP**, unzip it, and run the same commands starting from `cd sarif/app`.
+No Git? Click the green **Code** button on the repo page, Download ZIP, unzip, then run the commands above starting from `cd sarif/app`.
 
 ## API keys (optional)
 
-Works without any API keys. Award search and live prices turn on once you add them.
+Everything works without API keys. Award search and live prices light up once you add them.
 
 | Key | What it powers | Where to get it | Cost |
 |-----|---------------|-----------------|------|
@@ -33,38 +64,44 @@ Works without any API keys. Award search and live prices turn on once you add th
 | `RAPIDAPI_KEY` | Business/PE cash prices | [Sky Scrapper on RapidAPI](https://rapidapi.com/apiheya/api/sky-scrapper) | Free (100 req/mo) or $8.99/mo (10k req) |
 | `TRAVELPAYOUTS_TOKEN` | Economy cash baseline | [travelpayouts.com](https://www.travelpayouts.com/developers/api) | Free |
 
-Add keys to `.env` and restart `npm run dev` — it runs both the frontend and the API server automatically.
+**Desktop app:** Add keys from Settings (gear icon) in the app. No file editing needed.
+
+**Running from source:** Either add keys in Settings, or put them in `app/.env` (copy `.env.example`) and restart `npm run dev`.
 
 ## Overview
 
 ![Sarif dashboard](screenshots/sarif-overview.png)
 
-**Award Search** pulls live award availability from [seats.aero](https://seats.aero), which aggregates availability across 30+ airline loyalty programs (United, Aeroplan, Flying Blue, etc.) into one API. Sarif shows these results alongside cash prices from [Sky Scrapper](https://rapidapi.com/apiheya/api/sky-scrapper) (business/premium economy) and [Travelpayouts](https://www.travelpayouts.com/developers/api) (economy), so you can compare points vs. dollars on the same screen.
+**Award Search** pulls live award availability from [seats.aero](https://seats.aero), which aggregates 30+ airline loyalty programs (United, Aeroplan, Flying Blue, etc.) into one API. Results show alongside cash prices from [Sky Scrapper](https://rapidapi.com/apiheya/api/sky-scrapper) (business/premium economy) and [Travelpayouts](https://www.travelpayouts.com/developers/api) (economy) so you can compare points vs. cash on the same screen.
 
-**Points & Miles** tracks balances across all your programs and shows which transferable currencies (Amex MR, Chase UR, etc.) can move where.
+**Points & Miles** tracks balances across your programs and shows which transferable currencies (Amex MR, Chase UR, etc.) can move where.
 
-**US Presence Tracker** counts rolling 180-day and 365-day totals, runs the IRS Substantial Presence Test (the 3-year weighted formula), and suggests exit dates so you don't accidentally trigger tax residency.
+**US Presence Tracker** counts rolling 180-day and 365-day totals, runs the IRS Substantial Presence Test (the 3-year weighted formula), and suggests exit dates to avoid triggering tax residency.
 
-**Schengen Tracker** does the same for the 90/180-day Schengen rule.
+**Schengen Tracker** does the same for the 90/180-day rule.
 
-**Trip Planner** lets you simulate future trips against both US and Schengen limits before you book anything.
+**Trip Planner** lets you simulate future trips against both US and Schengen limits before booking.
 
 ![Award Search](screenshots/sarif-search.png)
 
-No accounts, no cloud, no tracking. Data stays on your machine.
+## Your data
 
-## Data setup
+Trips, points, and settings are stored locally on your device. Browser version uses localStorage, desktop app uses its own storage.
 
-Add your data directly in the app:
-- **US trips** — get your entry/exit dates from [i94.cbp.dhs.gov](https://i94.cbp.dhs.gov), then add them in the Trip History tab
-- **Schengen stays** — add in the Schengen tab
-- **Points balances** — edit inline in the Points tab
+Your data persists through restarts, reboots, and updates.
 
-All data is stored in your browser's localStorage and never leaves your machine.
+The desktop app and browser version have **separate storage** and don't sync with each other. If you're switching from the browser version to the desktop app, use the export/import in Settings to move your data over.
+
+**Backing up:** Settings (gear icon) > Export backup. Saves everything as a JSON file. Import backup to restore.
+
+**Things that will delete your data:**
+- Clicking "Start fresh" in Settings
+- Clearing browser data (web version)
+- Uninstalling the app without exporting first
 
 ## Stack
 
-React 19, Vite, Tailwind CSS, Recharts, Express (API proxy), localStorage
+React 19, Vite, Tailwind CSS, Recharts, Express (API proxy), Electron (desktop), localStorage
 
 ## License
 

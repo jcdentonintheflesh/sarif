@@ -19,7 +19,7 @@ import AwardSearch from './components/AwardSearch';
 import TripPlanner from './components/TripPlanner';
 import SetupModal from './components/SetupModal';
 import OnboardingBanner from './components/OnboardingBanner';
-import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings } from 'lucide-react';
+import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings, Shield, Flag, Fingerprint, Globe2 } from 'lucide-react';
 
 const TABS = [
   { id: 'overview',  label: 'Overview',        icon: BarChart2  },
@@ -29,8 +29,23 @@ const TABS = [
   { id: 'points',    label: 'Points',            icon: CreditCard },
 ];
 
-// Citizenship controls which *tracking widgets* show, not which tabs are visible.
-const CITIZENSHIP_LABELS = { us: '🇺🇸 US', eu: '🇪🇺 EU', both: '🌐 Dual', neither: '🛂 Visitor' };
+// Which tabs to hide based on citizenship:
+// US citizens don't need the US trip tracker (no ESTA/B2 limits)
+// EU citizens don't need Schengen tracker (no 90/180 limits)
+// Dual citizens need neither tracker
+const HIDDEN_TABS = {
+  us:      ['trips'],
+  eu:      ['schengen'],
+  both:    ['trips', 'schengen'],
+  neither: [],
+};
+
+const CITIZENSHIP_BADGES = {
+  us:      { label: 'US',      icon: Flag,        color: 'text-blue-400' },
+  eu:      { label: 'EU',      icon: Globe2,      color: 'text-emerald-400' },
+  both:    { label: 'Dual',    icon: Shield,      color: 'text-purple-400' },
+  neither: { label: 'Visitor', icon: Fingerprint,  color: 'text-slate-400' },
+};
 
 function loadState(key, fallback) {
   try {
@@ -54,9 +69,16 @@ export default function App() {
     DEMO_MODE || !!localStorage.getItem('sarif_onboarding_dismissed') || !!localStorage.getItem('sarif_setup_done')
   );
 
-  // Citizenship controls tracking widgets, not tab visibility
+  // Citizenship controls both tab visibility and tracking widgets
+  const hiddenTabs = HIDDEN_TABS[citizenship] || [];
+  const visibleTabs = TABS.filter(t => !hiddenTabs.includes(t.id));
   const showUsTracking = citizenship !== 'us' && citizenship !== 'both';
   const showSchengenTracking = citizenship !== 'eu' && citizenship !== 'both';
+
+  // Redirect to overview if the current tab gets hidden after a citizenship change
+  useEffect(() => {
+    if (hiddenTabs.includes(activeTab)) setActiveTab('overview');
+  }, [citizenship]);
 
   // One-time migration: move misrouted trips to the correct array.
   // Old bug: Trip History tab always added to usTrips regardless of zone dropdown.
@@ -87,6 +109,58 @@ export default function App() {
   function removeUserDest(key)        { setUserDestinations(p => p.filter(d => d.key !== key)); }
   function addPoint(program)          { setPoints(p => [...p, program]); }
   function removePoint(i)             { setPoints(p => p.filter((_, idx) => idx !== i)); }
+
+  function exportData() {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      usTrips, schengenTrips, points, userDestinations,
+      homeAirport, citizenship,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sarif-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.version || typeof data !== 'object') {
+            resolve('Not a valid Sarif backup file.');
+            return;
+          }
+          if (Array.isArray(data.usTrips))          setUsTrips(data.usTrips);
+          if (Array.isArray(data.schengenTrips))    setSchengenTrips(data.schengenTrips);
+          if (Array.isArray(data.points))           setPoints(data.points);
+          if (Array.isArray(data.userDestinations)) setUserDestinations(data.userDestinations);
+          if (data.homeAirport && typeof data.homeAirport === 'string') {
+            setHomeAirport(data.homeAirport);
+            localStorage.setItem('sarif_home', data.homeAirport);
+          }
+          if (data.citizenship && typeof data.citizenship === 'string') {
+            setCitizenship(data.citizenship);
+            localStorage.setItem('sarif_citizenship', data.citizenship);
+          }
+          if (data.apiKeys && typeof data.apiKeys === 'object') {
+            localStorage.setItem('sarif_api_keys', JSON.stringify(data.apiKeys));
+          }
+          setShowSetup(false);
+          resolve(null);
+        } catch {
+          resolve('Could not read file. Make sure it\'s a Sarif backup JSON.');
+        }
+      };
+      reader.onerror = () => resolve('Failed to read file.');
+      reader.readAsText(file);
+    });
+  }
 
   function handleSetupComplete({ homeAirport: ap, clearData, citizenship: ct, restoreData }) {
     if (ct) {
@@ -134,6 +208,12 @@ export default function App() {
           isSampleData={isSampleData}
           hasFileData={!!userData}
           onComplete={handleSetupComplete}
+          onExport={exportData}
+          onImport={importData}
+          onClose={() => setShowSetup(false)}
+          isSettings={setupDone}
+          currentAirport={homeAirport}
+          currentCitizenship={citizenship}
         />
       )}
 
@@ -175,9 +255,16 @@ export default function App() {
                 {homeAirport}
               </span>
             )}
-            <span className="text-xs text-slate-500 bg-white/5 border border-white/8 px-2.5 py-1 rounded-lg">
-              {CITIZENSHIP_LABELS[citizenship] || CITIZENSHIP_LABELS.neither}
-            </span>
+            {(() => {
+              const badge = CITIZENSHIP_BADGES[citizenship] || CITIZENSHIP_BADGES.neither;
+              const Icon = badge.icon;
+              return (
+                <span className={`flex items-center gap-1.5 text-xs font-medium ${badge.color} bg-white/5 px-2.5 py-1 rounded-full`}>
+                  <Icon size={11} />
+                  {badge.label}
+                </span>
+              );
+            })()}
             <span className="text-xs text-slate-600">
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
@@ -195,7 +282,7 @@ export default function App() {
       {/* Tabs */}
       <div className="border-b border-white/5 px-6">
         <div className="max-w-7xl mx-auto flex gap-1">
-          {TABS.map(tab => {
+          {visibleTabs.map(tab => {
             const Icon = tab.icon;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -219,6 +306,7 @@ export default function App() {
         {setupDone && !onboardingDismissed && !DEMO_MODE && (
           <div className="mb-5">
             <OnboardingBanner
+              citizenship={citizenship}
               onNavigate={setActiveTab}
               onDismiss={() => {
                 setOnboardingDismissed(true);
@@ -231,10 +319,12 @@ export default function App() {
         {activeTab === 'overview' && (
           <div className="space-y-5">
             {showUsTracking && <StatusBar trips={usTrips} />}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-              {showUsTracking && <YearlyChart trips={usTrips} />}
-              <SchengenTracker trips={schengenTrips} onAdd={addSchengenTrip} citizenship={citizenship} />
-            </div>
+            {(showUsTracking || showSchengenTracking) && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {showUsTracking && <YearlyChart trips={usTrips} />}
+                {showSchengenTracking && <SchengenTracker trips={schengenTrips} onAdd={addSchengenTrip} citizenship={citizenship} />}
+              </div>
+            )}
             <TripPlanner usTrips={usTrips} schengenTrips={schengenTrips} citizenship={citizenship} />
             {/* Compact points summary */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
