@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { computedTrips } from '../utils/calculations';
-import { Plus, X, Trash2 } from 'lucide-react';
+import { Plus, X, Trash2, Pencil, Check } from 'lucide-react';
 
 export default function TripHistory({
-  trips, onAdd, onRemove, onClear, homeAirport, zone = 'US',
+  trips, onAdd, onRemove, onUpdate, onClear, homeAirport, zone = 'US',
   // Combined mode props (Trip History tab showing both zones)
-  combined = false, schengenTrips, onAddSchengen, onRemoveSchengen, onClearSchengen,
+  combined = false, schengenTrips, onAddSchengen, onRemoveSchengen, onUpdateSchengen, onClearSchengen,
 }) {
   const [showForm,    setShowForm]    = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [editingIdx,  setEditingIdx]  = useState(null); // index into allTrips
+  const [editForm,    setEditForm]    = useState({});
   const defaultZone = combined ? 'US' : zone;
   const [form, setForm] = useState({
     arrival:   '',
@@ -49,6 +51,30 @@ export default function TripHistory({
     } else {
       onRemove(trip._idx);
     }
+  }
+
+  function startEdit(trip, displayIdx) {
+    setEditingIdx(displayIdx);
+    setEditForm({
+      arrival: trip.arrival,
+      departure: trip.departure || '',
+      entryPort: trip.entryPort || '',
+    });
+  }
+
+  function saveEdit(trip) {
+    const data = {
+      arrival: editForm.arrival,
+      departure: editForm.departure || null,
+      entryPort: editForm.entryPort,
+    };
+    if (combined) {
+      if (trip._zone === 'Schengen') onUpdateSchengen(trip._idx, data);
+      else onUpdate(trip._idx, data);
+    } else {
+      onUpdate(trip._idx, data);
+    }
+    setEditingIdx(null);
   }
 
   function handleClear() {
@@ -195,45 +221,116 @@ export default function TripHistory({
             </thead>
             <tbody className="divide-y divide-white/5">
               {computed.map((trip, i) => (
-                <tr key={i} className={`${trip.isActive ? 'bg-blue-500/10' : ''} hover:bg-white/5 transition-colors`}>
-                  <td className="py-2.5 pr-4 font-mono text-slate-300 text-xs">
-                    {format(parseISO(trip.arrival), 'MMM d, yyyy')}
-                  </td>
-                  <td className="py-2.5 pr-4 font-mono text-slate-300 text-xs">
-                    {trip.isActive ? (
-                      <span className="text-blue-400 font-semibold">Here now ●</span>
-                    ) : (
-                      format(parseISO(trip.departure), 'MMM d, yyyy')
+                editingIdx === i ? (
+                  <tr key={i} className="bg-blue-500/5">
+                    <td className="py-2 pr-2">
+                      <input
+                        type="date"
+                        value={editForm.arrival}
+                        onChange={e => setEditForm(f => ({ ...f, arrival: e.target.value }))}
+                        className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-blue-500 w-full"
+                      />
+                    </td>
+                    <td className="py-2 pr-2">
+                      <input
+                        type="date"
+                        value={editForm.departure}
+                        min={editForm.arrival || undefined}
+                        onChange={e => setEditForm(f => ({ ...f, departure: e.target.value }))}
+                        placeholder="Still there"
+                        className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-blue-500 w-full"
+                      />
+                    </td>
+                    <td className="py-2 pr-2 text-xs text-slate-500">—</td>
+                    {combined && (
+                      <td className="py-2 pr-2">
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                          trip._zone === 'Schengen'
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-blue-500/15 text-blue-400'
+                        }`}>
+                          {trip._zone}
+                        </span>
+                      </td>
                     )}
-                  </td>
-                  <td className="py-2.5 pr-4">
-                    <span className={`text-xs font-semibold ${trip.durationDays > 60 ? 'text-red-400' : trip.durationDays > 45 ? 'text-yellow-400' : 'text-slate-300'}`}>
-                      {trip.durationDays}d
-                    </span>
-                  </td>
-                  {combined && (
+                    <td className="py-2 pr-2">
+                      <input
+                        type="text"
+                        value={editForm.entryPort}
+                        onChange={e => setEditForm(f => ({ ...f, entryPort: e.target.value.toUpperCase() }))}
+                        className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white font-mono uppercase focus:outline-none focus:border-blue-500 w-20"
+                      />
+                    </td>
+                    <td className="py-2">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => saveEdit(trip)}
+                          className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                          title="Save"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingIdx(null)}
+                          className="text-slate-500 hover:text-slate-300 transition-colors"
+                          title="Cancel"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={i} className={`${trip.isActive ? 'bg-blue-500/10' : ''} hover:bg-white/5 transition-colors`}>
+                    <td className="py-2.5 pr-4 font-mono text-slate-300 text-xs">
+                      {format(parseISO(trip.arrival), 'MMM d, yyyy')}
+                    </td>
+                    <td className="py-2.5 pr-4 font-mono text-slate-300 text-xs">
+                      {trip.isActive ? (
+                        <span className="text-blue-400 font-semibold">Here now ●</span>
+                      ) : (
+                        format(parseISO(trip.departure), 'MMM d, yyyy')
+                      )}
+                    </td>
                     <td className="py-2.5 pr-4">
-                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                        trip._zone === 'Schengen'
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'bg-blue-500/15 text-blue-400'
-                      }`}>
-                        {trip._zone}
+                      <span className={`text-xs font-semibold ${trip.durationDays > 60 ? 'text-red-400' : trip.durationDays > 45 ? 'text-yellow-400' : 'text-slate-300'}`}>
+                        {trip.durationDays}d
                       </span>
                     </td>
-                  )}
-                  <td className="py-2.5 pr-4 text-xs text-slate-500 font-mono">
-                    {trip.entryPort || homeAirport || '—'}
-                  </td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => handleRemove(trip)}
-                      className="text-slate-600 hover:text-red-400 transition-colors"
-                    >
-                      <X size={13} />
-                    </button>
-                  </td>
-                </tr>
+                    {combined && (
+                      <td className="py-2.5 pr-4">
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                          trip._zone === 'Schengen'
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-blue-500/15 text-blue-400'
+                        }`}>
+                          {trip._zone}
+                        </span>
+                      </td>
+                    )}
+                    <td className="py-2.5 pr-4 text-xs text-slate-500 font-mono">
+                      {trip.entryPort || homeAirport || '—'}
+                    </td>
+                    <td className="py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => startEdit(trip, i)}
+                          className="text-slate-600 hover:text-blue-400 transition-colors"
+                          title="Edit trip"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleRemove(trip)}
+                          className="text-slate-600 hover:text-red-400 transition-colors"
+                          title="Delete trip"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
               ))}
             </tbody>
           </table>

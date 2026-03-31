@@ -100,9 +100,11 @@ export default function App() {
 
   function addUsTrip(trip)            { setUsTrips(p => [...p, trip]); }
   function removeUsTrip(i)            { setUsTrips(p => p.filter((_, idx) => idx !== i)); }
+  function updateUsTrip(i, data)      { setUsTrips(p => p.map((t, idx) => idx === i ? { ...t, ...data } : t)); }
   function clearUsTrips()             { setUsTrips([]); }
   function addSchengenTrip(trip)      { setSchengenTrips(p => [...p, trip]); }
   function removeSchengenTrip(i)      { setSchengenTrips(p => p.filter((_, idx) => idx !== i)); }
+  function updateSchengenTrip(i, data){ setSchengenTrips(p => p.map((t, idx) => idx === i ? { ...t, ...data } : t)); }
   function clearSchengenTrips()       { setSchengenTrips([]); }
   function updatePoints(i, bal)       { setPoints(p => p.map((pt, idx) => idx === i ? { ...pt, balance: bal } : pt)); }
   function addUserDest(dest)          { setUserDestinations(p => [...p, dest]); }
@@ -370,6 +372,8 @@ export default function App() {
             onAddSchengen={addSchengenTrip}
             onRemove={removeUsTrip}
             onRemoveSchengen={removeSchengenTrip}
+            onUpdate={updateUsTrip}
+            onUpdateSchengen={updateSchengenTrip}
             onClear={clearUsTrips}
             onClearSchengen={clearSchengenTrips}
             homeAirport={homeAirport}
@@ -384,6 +388,7 @@ export default function App() {
               trips={schengenTrips}
               onAdd={addSchengenTrip}
               onRemove={removeSchengenTrip}
+              onUpdate={updateSchengenTrip}
               onClear={clearSchengenTrips}
               homeAirport={homeAirport}
               zone="Schengen"
