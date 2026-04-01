@@ -48,8 +48,9 @@ export default function StatusBar({ trips }) {
   const exit   = recommendedExitDate(trips);
   const spt    = substantialPresenceTest(trips);
 
-  const anyUrgent = win180.pct >= 80 || win365.pct >= 80;
-  const borderColor = win180.pct >= 90 ? 'border-red-500/30' : win180.pct >= 70 ? 'border-yellow-500/30' : 'border-emerald-500/30';
+  const inUS = !!stay;
+  const anyUrgent = inUS && (win180.pct >= 80 || win365.pct >= 80);
+  const borderColor = !inUS ? 'border-white/10' : win180.pct >= 90 ? 'border-red-500/30' : win180.pct >= 70 ? 'border-yellow-500/30' : 'border-emerald-500/30';
 
   return (
     <div className={`rounded-2xl border ${borderColor} bg-white/5 backdrop-blur p-4 space-y-3`}>
@@ -84,9 +85,15 @@ export default function StatusBar({ trips }) {
           <span className="text-slate-500">Not in US</span>
         )}
         <span className="text-slate-700">·</span>
-        <span className="text-slate-400">
-          Exit by: <span className="text-white font-semibold">{exit.daysLeft <= 0 ? 'Now' : format(exit.date, 'MMM d')}</span>
-        </span>
+        {inUS ? (
+          <span className="text-slate-400">
+            Exit by: <span className="text-white font-semibold">{exit.daysLeft <= 0 ? 'Now' : format(exit.date, 'MMM d')}</span>
+          </span>
+        ) : (
+          <span className="text-slate-400">
+            Safe to enter: <span className="text-emerald-400 font-semibold">{win180.remaining > 0 ? `${win180.remaining}d left` : 'wait'}</span>
+          </span>
+        )}
         <span className="text-slate-700">·</span>
         <span className="text-slate-400">
           180d left: <span className={`font-semibold font-mono ${win180.remaining <= 0 ? 'text-red-400' : win180.remaining <= 15 ? 'text-yellow-400' : 'text-emerald-400'}`}>
