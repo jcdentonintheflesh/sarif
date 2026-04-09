@@ -21,6 +21,8 @@ extraResources:
     to: app-dist
     filter:
       - "**/*"
+  - from: ../app/server/routes.js
+    to: app-server/routes.js
 
 mac:
   category: public.app-category.travel
