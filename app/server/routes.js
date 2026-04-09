@@ -1,7 +1,33 @@
 // Shared API routes — used by both the web dev server and Electron app.
 // Call attachRoutes(expressApp, { dataPath }) to mount all endpoints.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
+
+const MAX_TRIPS     = 500;
+const MAX_POINTS    = 50;
+const MAX_DESTS     = 100;
+const VALID_CITIZENSHIP = new Set(['us', 'eu', 'both', 'neither']);
+
+function sanitizeString(val, maxLen = 100) {
+  if (typeof val !== 'string') return '';
+  return val.slice(0, maxLen).replace(/[^\w\s\-.,/()]/g, '');
+}
+
+function isValidTrip(t) {
+  if (!t || typeof t !== 'object') return false;
+  if (typeof t.arrival !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(t.arrival)) return false;
+  if (t.departure !== null && t.departure !== undefined) {
+    if (typeof t.departure !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(t.departure)) return false;
+  }
+  return true;
+}
+
+function isValidPoint(p) {
+  if (!p || typeof p !== 'object') return false;
+  if (typeof p.program !== 'string' || p.program.length > 100) return false;
+  if (p.balance !== null && p.balance !== undefined && typeof p.balance !== 'number') return false;
+  return true;
+}
 
 export function attachRoutes(app, { dataPath }) {
 
@@ -14,7 +40,10 @@ export function attachRoutes(app, { dataPath }) {
   }
 
   function writeData(data) {
-    writeFileSync(dataPath, JSON.stringify(data, null, 2), 'utf-8');
+    // Atomic write: write to temp file then rename (prevents corruption on crash)
+    const tmp = dataPath + '.tmp';
+    writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    renameSync(tmp, dataPath);
   }
 
   app.get('/api/data', (_req, res) => {
@@ -28,18 +57,32 @@ export function attachRoutes(app, { dataPath }) {
     if (!Array.isArray(usTrips) || !Array.isArray(schengenTrips) || !Array.isArray(points)) {
       return res.status(400).json({ error: true, message: 'Invalid data shape' });
     }
+    if (usTrips.length > MAX_TRIPS || schengenTrips.length > MAX_TRIPS) {
+      return res.status(400).json({ error: true, message: 'Too many trips' });
+    }
+    if (points.length > MAX_POINTS) {
+      return res.status(400).json({ error: true, message: 'Too many points programs' });
+    }
+    if (!usTrips.every(isValidTrip) || !schengenTrips.every(isValidTrip)) {
+      return res.status(400).json({ error: true, message: 'Invalid trip format' });
+    }
+    if (!points.every(isValidPoint)) {
+      return res.status(400).json({ error: true, message: 'Invalid points format' });
+    }
+    const destArr = Array.isArray(userDestinations) ? userDestinations.slice(0, MAX_DESTS) : [];
     const data = {
       usTrips, schengenTrips, points,
-      userDestinations: userDestinations || [],
-      homeAirport: homeAirport || '',
-      citizenship: citizenship || 'neither',
+      userDestinations: destArr,
+      homeAirport: sanitizeString(homeAirport, 10),
+      citizenship: VALID_CITIZENSHIP.has(citizenship) ? citizenship : 'neither',
       updatedAt: new Date().toISOString(),
     };
     try {
       writeData(data);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: true, message: e.message });
+      console.error('[PUT /api/data]', e.message);
+      res.status(500).json({ error: true, message: 'Failed to save data' });
     }
   });
 
@@ -77,7 +120,7 @@ export function attachRoutes(app, { dataPath }) {
   });
 
   app.get('/api/seats/*splat', async (req, res) => {
-    const splatPath = req.path.replace('/api/seats', '');
+    const splatPath = req.path.replace('/api/seats', '').replace(/[^a-zA-Z0-9\-_/]/g, '');
     const query = new URLSearchParams(req.query).toString();
     const url   = `https://seats.aero/partnerapi${splatPath}${query ? '?' + query : ''}`;
     try {
