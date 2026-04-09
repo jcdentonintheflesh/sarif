@@ -1,12 +1,56 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_PATH = join(__dirname, 'data.json');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/ }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// ── User data persistence ────────────────────────────────────────────────────
+
+function readData() {
+  if (!existsSync(DATA_PATH)) return null;
+  try { return JSON.parse(readFileSync(DATA_PATH, 'utf-8')); }
+  catch { return null; }
+}
+
+function writeData(data) {
+  writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+app.get('/api/data', (_req, res) => {
+  const data = readData();
+  if (!data) return res.status(404).json({ error: true, message: 'No saved data' });
+  res.json(data);
+});
+
+app.put('/api/data', (req, res) => {
+  const { usTrips, schengenTrips, points, userDestinations, homeAirport, citizenship } = req.body;
+  if (!Array.isArray(usTrips) || !Array.isArray(schengenTrips) || !Array.isArray(points)) {
+    return res.status(400).json({ error: true, message: 'Invalid data shape' });
+  }
+  const data = {
+    usTrips, schengenTrips, points,
+    userDestinations: userDestinations || [],
+    homeAirport: homeAirport || '',
+    citizenship: citizenship || 'neither',
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    writeData(data);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: true, message: e.message });
+  }
+});
 
 // ── Seats.aero proxy ─────────────────────────────────────────────────────────
 

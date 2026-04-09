@@ -28,6 +28,9 @@ dist-ssr
 # Never commit to a public repository.
 src/data/travelHistory.js
 
+# Server-side user data (personal travel records)
+server/data.json
+
 # Environment / secrets
 .env
 .env.local

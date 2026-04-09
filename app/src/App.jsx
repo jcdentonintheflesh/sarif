@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as exampleData from './data/travelHistory.example';
 
 // Optional user data file — if it doesn't exist, start empty.
@@ -93,10 +93,51 @@ export default function App() {
     localStorage.setItem('sarif_trips_migrated', '1');
   }, []);
 
-  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('usTrips',          JSON.stringify(usTrips));          }, [usTrips]);
-  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('schengenTrips',    JSON.stringify(schengenTrips));    }, [schengenTrips]);
-  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('points',           JSON.stringify(points));           }, [points]);
-  useEffect(() => { if (!DEMO_MODE) localStorage.setItem('userDestinations', JSON.stringify(userDestinations)); }, [userDestinations]);
+  // ── Server-side persistence ──────────────────────────────────────────────
+  const saveTimer = useRef(null);
+  const initialLoad = useRef(true);
+
+  // Load from server on mount (server is source of truth)
+  useEffect(() => {
+    if (DEMO_MODE) return;
+    fetch('/api/data').then(r => r.ok ? r.json() : null).then(data => {
+      if (!data) return; // no server data yet — keep file/localStorage seed
+      if (Array.isArray(data.usTrips))          setUsTrips(data.usTrips);
+      if (Array.isArray(data.schengenTrips))    setSchengenTrips(data.schengenTrips);
+      if (Array.isArray(data.points))           setPoints(data.points);
+      if (Array.isArray(data.userDestinations)) setUserDestinations(data.userDestinations);
+      if (data.homeAirport) { setHomeAirport(data.homeAirport); localStorage.setItem('sarif_home', data.homeAirport); }
+      if (data.citizenship) { setCitizenship(data.citizenship); localStorage.setItem('sarif_citizenship', data.citizenship); }
+    }).catch(() => { /* server unreachable — use local seed */ })
+      .finally(() => { initialLoad.current = false; });
+  }, []);
+
+  // Persist to server + localStorage on every change (debounced)
+  const persistToServer = useCallback((us, sch, pts, dests) => {
+    if (DEMO_MODE) return;
+    // Always update localStorage immediately
+    localStorage.setItem('usTrips',          JSON.stringify(us));
+    localStorage.setItem('schengenTrips',    JSON.stringify(sch));
+    localStorage.setItem('points',           JSON.stringify(pts));
+    localStorage.setItem('userDestinations', JSON.stringify(dests));
+    // Debounce server writes
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch('/api/data', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usTrips: us, schengenTrips: sch, points: pts, userDestinations: dests,
+          homeAirport, citizenship,
+        }),
+      }).catch(() => { /* server down — localStorage still has the data */ });
+    }, 500);
+  }, [homeAirport, citizenship]);
+
+  useEffect(() => {
+    if (initialLoad.current) return; // don't write back the initial seed
+    persistToServer(usTrips, schengenTrips, points, userDestinations);
+  }, [usTrips, schengenTrips, points, userDestinations, persistToServer]);
 
   function addUsTrip(trip)            { setUsTrips(p => [...p, trip]); }
   function removeUsTrip(i)            { setUsTrips(p => p.filter((_, idx) => idx !== i)); }
@@ -195,6 +236,10 @@ export default function App() {
     // Show onboarding banner after first setup (not after re-opening settings)
     if (!localStorage.getItem('sarif_onboarding_dismissed')) {
       setOnboardingDismissed(false);
+    }
+    // Persist settings to server
+    if (!DEMO_MODE) {
+      setTimeout(() => persistToServer(usTrips, schengenTrips, points, userDestinations), 100);
     }
   }
 
