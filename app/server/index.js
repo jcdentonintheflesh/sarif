@@ -13,7 +13,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: process.env.CORS_ORIGIN || /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/ }));
 app.use(express.json({ limit: '1mb' }));
 
-attachRoutes(app, { dataPath: join(__dirname, 'data.json') });
+attachRoutes(app, {
+  dataPath: join(__dirname, 'data.json'),
+  keysPath: join(__dirname, 'keys.json'),
+});
 
 const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`Travel agent API running on http://localhost:${PORT}`);

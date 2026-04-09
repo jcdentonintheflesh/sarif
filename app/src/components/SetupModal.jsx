@@ -35,8 +35,13 @@ export default function SetupModal({
       setError('Enter a 3-letter IATA code (e.g. JFK, LHR, DXB)');
       return;
     }
-    // Save API keys along with the rest
+    // Save API keys to localStorage + server
     localStorage.setItem('sarif_api_keys', JSON.stringify(apiKeys));
+    fetch('/api/keys', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys: apiKeys }),
+    }).catch(() => {});
     if (isSettings) {
       onComplete({ homeAirport: code || null, clearData: false, citizenship });
     } else {

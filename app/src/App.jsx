@@ -110,6 +110,12 @@ export default function App() {
       if (data.citizenship) { setCitizenship(data.citizenship); localStorage.setItem('sarif_citizenship', data.citizenship); }
     }).catch(() => { /* server unreachable — use local seed */ })
       .finally(() => { initialLoad.current = false; });
+    // Restore API keys from server if not in localStorage
+    if (!localStorage.getItem('sarif_api_keys')) {
+      fetch('/api/keys/restore').then(r => r.ok ? r.json() : null).then(data => {
+        if (data?.keys) localStorage.setItem('sarif_api_keys', JSON.stringify(data.keys));
+      }).catch(() => {});
+    }
   }, []);
 
   // Persist to server + localStorage on every change (debounced)

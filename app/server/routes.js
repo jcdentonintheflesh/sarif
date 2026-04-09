@@ -29,7 +29,7 @@ function isValidPoint(p) {
   return true;
 }
 
-export function attachRoutes(app, { dataPath }) {
+export function attachRoutes(app, { dataPath, keysPath }) {
 
   // ── User data persistence ──────────────────────────────────────────────────
 
@@ -83,6 +83,64 @@ export function attachRoutes(app, { dataPath }) {
     } catch (e) {
       console.error('[PUT /api/data]', e.message);
       res.status(500).json({ error: true, message: 'Failed to save data' });
+    }
+  });
+
+  // ── API key persistence (separate file — never included in exports/backups) ─
+
+  const VALID_KEY_NAMES = new Set(['SEATS_API_KEY', 'RAPIDAPI_KEY', 'TRAVELPAYOUTS_TOKEN']);
+
+  function readKeys() {
+    if (!keysPath || !existsSync(keysPath)) return null;
+    try { return JSON.parse(readFileSync(keysPath, 'utf-8')); }
+    catch { return null; }
+  }
+
+  function writeKeys(keys) {
+    if (!keysPath) return;
+    const tmp = keysPath + '.tmp';
+    writeFileSync(tmp, JSON.stringify(keys, null, 2), 'utf-8');
+    renameSync(tmp, keysPath);
+  }
+
+  app.get('/api/keys', (_req, res) => {
+    const keys = readKeys();
+    if (!keys) return res.status(404).json({ error: true, message: 'No saved keys' });
+    // Return masked keys so the frontend knows which are set without exposing values
+    const masked = {};
+    for (const [k, v] of Object.entries(keys)) {
+      if (VALID_KEY_NAMES.has(k) && typeof v === 'string' && v.length > 0) {
+        masked[k] = v.slice(0, 4) + '…' + v.slice(-4);
+      }
+    }
+    res.json({ keys: masked });
+  });
+
+  // Separate endpoint to load full keys (only called by frontend to restore to localStorage)
+  app.get('/api/keys/restore', (_req, res) => {
+    const keys = readKeys();
+    if (!keys) return res.status(404).json({ error: true, message: 'No saved keys' });
+    res.json({ keys });
+  });
+
+  app.put('/api/keys', (req, res) => {
+    const incoming = req.body.keys;
+    if (!incoming || typeof incoming !== 'object') {
+      return res.status(400).json({ error: true, message: 'Invalid keys format' });
+    }
+    // Only accept known key names, validate they're strings
+    const clean = {};
+    for (const name of VALID_KEY_NAMES) {
+      if (typeof incoming[name] === 'string' && incoming[name].length > 0 && incoming[name].length < 200) {
+        clean[name] = incoming[name];
+      }
+    }
+    try {
+      writeKeys(clean);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[PUT /api/keys]', e.message);
+      res.status(500).json({ error: true, message: 'Failed to save keys' });
     }
   });
 

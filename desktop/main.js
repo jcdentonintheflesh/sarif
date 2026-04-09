@@ -22,6 +22,9 @@ let mainWindow = null;
 const DATA_PATH = app.isPackaged
   ? path.join(app.getPath('userData'), 'sarif-data.json')
   : path.join(__dirname, '..', 'sarif-data.json');
+const KEYS_PATH = app.isPackaged
+  ? path.join(app.getPath('userData'), 'sarif-keys.json')
+  : path.join(__dirname, '..', 'sarif-keys.json');
 
 // ── Express API server (shared routes from app/server/routes.js) ────────────
 
@@ -41,7 +44,7 @@ function startServer() {
     server.use(cors({ origin: /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/ }));
     server.use(express.json({ limit: '1mb' }));
 
-    attachRoutes(server, { dataPath: DATA_PATH });
+    attachRoutes(server, { dataPath: DATA_PATH, keysPath: KEYS_PATH });
 
     // ── Serve built frontend in production ──────────────────────────────
     if (!IS_DEV) {
