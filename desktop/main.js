@@ -1,5 +1,6 @@
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell, dialog, safeStorage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 // In dev mode, load .env from the app folder for convenience
@@ -23,8 +24,25 @@ const DATA_PATH = app.isPackaged
   ? path.join(app.getPath('userData'), 'sarif-data.json')
   : path.join(__dirname, '..', 'sarif-data.json');
 const KEYS_PATH = app.isPackaged
-  ? path.join(app.getPath('userData'), 'sarif-keys.json')
-  : path.join(__dirname, '..', 'sarif-keys.json');
+  ? path.join(app.getPath('userData'), 'sarif-keys.enc')
+  : path.join(__dirname, '..', 'sarif-keys.enc');
+
+// ── Encrypted key storage (uses OS keychain via Electron safeStorage) ───────
+function readEncryptedKeys() {
+  if (!fs.existsSync(KEYS_PATH)) return null;
+  try {
+    const buf = fs.readFileSync(KEYS_PATH);
+    const decrypted = safeStorage.decryptString(buf);
+    return JSON.parse(decrypted);
+  } catch { return null; }
+}
+
+function writeEncryptedKeys(keys) {
+  const encrypted = safeStorage.encryptString(JSON.stringify(keys));
+  const tmp = KEYS_PATH + '.tmp';
+  fs.writeFileSync(tmp, encrypted);
+  fs.renameSync(tmp, KEYS_PATH);
+}
 
 // ── Express API server (shared routes from app/server/routes.js) ────────────
 
@@ -44,7 +62,49 @@ function startServer() {
     server.use(cors({ origin: /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/ }));
     server.use(express.json({ limit: '1mb' }));
 
-    attachRoutes(server, { dataPath: DATA_PATH, keysPath: KEYS_PATH });
+    // keysPath: null — Electron uses encrypted storage below instead of plaintext
+    attachRoutes(server, { dataPath: DATA_PATH, keysPath: null });
+
+    // ── Encrypted key endpoints (override shared routes' plaintext version) ──
+    const VALID_KEY_NAMES = new Set(['SEATS_API_KEY', 'RAPIDAPI_KEY', 'TRAVELPAYOUTS_TOKEN']);
+
+    server.get('/api/keys', (_req, res) => {
+      const keys = readEncryptedKeys();
+      if (!keys) return res.status(404).json({ error: true, message: 'No saved keys' });
+      const masked = {};
+      for (const [k, v] of Object.entries(keys)) {
+        if (VALID_KEY_NAMES.has(k) && typeof v === 'string' && v.length > 0) {
+          masked[k] = v.slice(0, 4) + '…' + v.slice(-4);
+        }
+      }
+      res.json({ keys: masked });
+    });
+
+    server.get('/api/keys/restore', (_req, res) => {
+      const keys = readEncryptedKeys();
+      if (!keys) return res.status(404).json({ error: true, message: 'No saved keys' });
+      res.json({ keys });
+    });
+
+    server.put('/api/keys', (req, res) => {
+      const incoming = req.body.keys;
+      if (!incoming || typeof incoming !== 'object') {
+        return res.status(400).json({ error: true, message: 'Invalid keys format' });
+      }
+      const clean = {};
+      for (const name of VALID_KEY_NAMES) {
+        if (typeof incoming[name] === 'string' && incoming[name].length > 0 && incoming[name].length < 200) {
+          clean[name] = incoming[name];
+        }
+      }
+      try {
+        writeEncryptedKeys(clean);
+        res.json({ ok: true });
+      } catch (e) {
+        console.error('[PUT /api/keys]', e.message);
+        res.status(500).json({ error: true, message: 'Failed to save keys' });
+      }
+    });
 
     // ── Serve built frontend in production ──────────────────────────────
     if (!IS_DEV) {
