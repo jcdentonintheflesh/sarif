@@ -27,7 +27,7 @@ Easiest way to get started. One file, no terminal needed.
 
 Windows support is coming soon.
 
-Everything runs on your machine. No account, no cloud, no tracking.
+Everything runs on your machine with no account, no cloud and no tracking.
 
 > **macOS security warning:** The app isn't notarized yet (standard for open-source apps outside the App Store). On first launch, macOS will block it. To open:
 >
