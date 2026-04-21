@@ -38,9 +38,22 @@ Everything runs on your machine. No account, no cloud, no tracking.
 >
 > You only need to do this once. Notarization is on the roadmap.
 
+## Run with Docker
+
+```bash
+git clone https://github.com/jcdentonintheflesh/sarif.git
+cd sarif/app
+cp .env.example .env
+docker compose up -d
+```
+
+Open [localhost:3847](http://localhost:3847). Done.
+
+To stop: `docker compose down`. To update: `git pull && docker compose up -d --build`.
+
 ## Run from source
 
-If you'd rather run from source or want to contribute:
+If you'd rather run without Docker:
 
 ```bash
 git clone https://github.com/jcdentonintheflesh/sarif.git
@@ -86,22 +99,24 @@ Everything works without API keys. Award search and live prices light up once yo
 
 ## Your data
 
-Trips, points, and settings are stored locally on your device. Browser version uses localStorage, desktop app uses its own storage.
+All data is stored locally on your device — trips, points, API keys, and settings. Nothing leaves your machine.
 
-Your data persists through restarts, reboots, and updates.
+- **Docker:** Data persists in a Docker volume (`sarif_data`). Survives container restarts and rebuilds.
+- **Source:** Data saved to `server/data.json`. Survives browser clears and restarts.
+- **Desktop app:** Data in your OS app data directory. Survives app updates.
 
-The desktop app and browser version have **separate storage** and don't sync with each other. If you're switching from the browser version to the desktop app, use the export/import in Settings to move your data over.
+API keys are stored in a separate file from trip data, so exporting a backup never leaks your keys.
 
 **Backing up:** Settings (gear icon) > Export backup. Saves everything as a JSON file. Import backup to restore.
 
 **Things that will delete your data:**
 - Clicking "Start fresh" in Settings
-- Clearing browser data (web version)
-- Uninstalling the app without exporting first
+- `docker compose down -v` (removes volumes — don't use `-v` unless you mean it)
+- Uninstalling the desktop app without exporting first
 
 ## Stack
 
-React 19, Vite, Tailwind CSS, Recharts, Express (API proxy), Electron (desktop), localStorage
+React 19, Vite, Tailwind CSS, Recharts, Express (API + data persistence), Electron (desktop), Docker
 
 ## License
 
