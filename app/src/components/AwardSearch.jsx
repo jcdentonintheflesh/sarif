@@ -505,9 +505,10 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     fetchCashBizPrices(o, d, 'J', setCashBizLoading, setCashBizPrices);
     fetchCashBizPrices(o, d, 'W', setCashPELoading, setCashPEPrices);
 
+    const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
     const dateParams = [
-      dateFrom ? `&start_date=${dateFrom}` : '',
-      dateTo   ? `&end_date=${dateTo}`     : '',
+      dateFrom && isDate(dateFrom) ? `&start_date=${dateFrom}` : '',
+      dateTo   && isDate(dateTo)   ? `&end_date=${dateTo}`     : '',
     ].join('');
 
     try {
@@ -526,7 +527,12 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
         setRetResults(retData.error ? [] : (retData.data || []));
       }
     } catch (e) {
-      setError(e.message || 'Search failed — check that the dev server is running');
+      const msg = e.message || '';
+      if (msg.includes('Seats.aero')) {
+        setError('Award search unavailable — check your Seats.aero API key in settings');
+      } else {
+        setError(msg || 'Search failed — check that the server is running');
+      }
     } finally {
       setLoading(false);
       setRetLoading(false);
