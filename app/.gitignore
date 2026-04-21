@@ -32,6 +32,12 @@ src/data/travelHistory.js
 server/data.json
 server/keys.json
 
+# Dev notes
+NOTES.md
+
+# Data backups
+server/data.json.bak
+
 # Environment / secrets
 .env
 .env.local

@@ -1,0 +1,14 @@
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "127.0.0.1:${APP_PORT:-5173}:5173"
+      - "127.0.0.1:3001:3001"
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"

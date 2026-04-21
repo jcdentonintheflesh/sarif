@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.*
+server/data.json
+server/data.json.bak
+server/keys.json
+*.local
+.DS_Store
