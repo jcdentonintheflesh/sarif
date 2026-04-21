@@ -153,6 +153,10 @@ export function attachRoutes(app, { dataPath, keysPath }) {
     const KEY   = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
     const query = new URLSearchParams(req.query);
     query.set('take', '300');
+    // Strip malformed date params before they hit Seats.aero
+    const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+    if (query.has('start_date') && !isDate(query.get('start_date'))) query.delete('start_date');
+    if (query.has('end_date')   && !isDate(query.get('end_date')))   query.delete('end_date');
     const cacheKey = query.toString();
 
     const cached = searchCache.get(cacheKey);
@@ -164,15 +168,22 @@ export function attachRoutes(app, { dataPath, keysPath }) {
       const url  = `https://seats.aero/partnerapi/search?${cacheKey}`;
       const r    = await fetch(url, { headers: { 'Partner-Authorization': KEY } });
       const text = await r.text();
-      if (!r.ok) throw new Error(`Seats.aero ${r.status}: ${text.slice(0, 120)}`);
+      if (!r.ok) {
+        console.error(`[seats/search] ${r.status}: ${text.slice(0, 200)}`);
+        return res.status(r.status >= 400 && r.status < 500 ? 400 : 502).json({ error: true, message: 'Award search failed — check your API key and search parameters' });
+      }
       const data = JSON.parse(text);
-      if (data.error) throw new Error(data.message || 'Seats.aero error');
+      if (data.error) {
+        console.error(`[seats/search] API error: ${data.message}`);
+        return res.status(400).json({ error: true, message: 'No award availability found for this route' });
+      }
       const result = data.data || [];
       if (searchCache.size >= CACHE_MAX) searchCache.delete(searchCache.keys().next().value);
       searchCache.set(cacheKey, { data: result, ts: Date.now() });
       res.json({ data: result });
     } catch (e) {
-      res.status(500).json({ error: true, message: e.message });
+      console.error('[seats/search]', e.message);
+      res.status(500).json({ error: true, message: 'Award search unavailable' });
     }
   });
 
