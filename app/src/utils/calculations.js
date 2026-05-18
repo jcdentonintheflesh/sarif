@@ -7,7 +7,8 @@ function clamp(d, lo, hi) {
   return new Date(Math.max(lo, Math.min(hi, d)));
 }
 
-// Days spent in the US within a specific date range [windowStart, windowEnd]
+// Days spent in a zone within a specific date range [windowStart, windowEnd]
+// Inclusive: both arrival and departure day count (how border agencies calculate)
 export function daysInWindow(trips, windowStart, windowEnd) {
   let total = 0;
   for (const trip of trips) {
@@ -15,7 +16,7 @@ export function daysInWindow(trips, windowStart, windowEnd) {
     const departure = trip.departure ? parseISO(trip.departure) : today();
     const lo = clamp(arrival, windowStart, windowEnd);
     const hi = clamp(departure, windowStart, windowEnd);
-    const days = differenceInDays(hi, lo);
+    const days = differenceInDays(hi, lo) + 1;
     if (days > 0) total += days;
   }
   return total;
