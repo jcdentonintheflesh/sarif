@@ -53,7 +53,7 @@ export function attachRoutes(app, { dataPath, keysPath }) {
   });
 
   app.put('/api/data', (req, res) => {
-    const { usTrips, schengenTrips, points, userDestinations, homeAirport, citizenship } = req.body;
+    const { usTrips, schengenTrips, points, userDestinations, customZones, homeAirport, citizenship } = req.body;
     if (!Array.isArray(usTrips) || !Array.isArray(schengenTrips) || !Array.isArray(points)) {
       return res.status(400).json({ error: true, message: 'Invalid data shape' });
     }
@@ -70,9 +70,17 @@ export function attachRoutes(app, { dataPath, keysPath }) {
       return res.status(400).json({ error: true, message: 'Invalid points format' });
     }
     const destArr = Array.isArray(userDestinations) ? userDestinations.slice(0, MAX_DESTS) : [];
+    // Validate custom zones: each must have label (string) and trips (array of valid trips)
+    const zonesArr = (Array.isArray(customZones) ? customZones : []).slice(0, 10).map(z => ({
+      label: sanitizeString(z.label, 50),
+      trips: Array.isArray(z.trips) ? z.trips.filter(isValidTrip).slice(0, MAX_TRIPS) : [],
+      windowDays: typeof z.windowDays === 'number' ? Math.min(z.windowDays, 365) : 180,
+      limitDays: typeof z.limitDays === 'number' ? Math.min(z.limitDays, 365) : 90,
+    })).filter(z => z.label.length > 0);
     const data = {
       usTrips, schengenTrips, points,
       userDestinations: destArr,
+      customZones: zonesArr,
       homeAirport: sanitizeString(homeAirport, 10),
       citizenship: VALID_CITIZENSHIP.has(citizenship) ? citizenship : 'neither',
       updatedAt: new Date().toISOString(),

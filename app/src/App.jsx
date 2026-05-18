@@ -15,6 +15,7 @@ import YearlyChart from './components/YearlyChart';
 import TripHistory from './components/TripHistory';
 import PointsOverview from './components/PointsOverview';
 import SchengenTracker from './components/SchengenTracker';
+import ZoneTracker from './components/ZoneTracker';
 import AwardSearch from './components/AwardSearch';
 import TripPlanner from './components/TripPlanner';
 import SetupModal from './components/SetupModal';
@@ -59,6 +60,7 @@ export default function App() {
   const [schengenTrips,    setSchengenTrips]    = useState(() => DEMO_MODE ? SCHENGEN_TRIPS    : loadState('schengenTrips',    SCHENGEN_TRIPS));
   const [points,           setPoints]           = useState(() => DEMO_MODE ? POINTS            : loadState('points',           POINTS));
   const [userDestinations, setUserDestinations] = useState(() => DEMO_MODE ? DEFAULT_USER_DESTINATIONS : loadState('userDestinations', DEFAULT_USER_DESTINATIONS));
+  const [customZones,      setCustomZones]      = useState(() => DEMO_MODE ? [] : loadState('customZones', []));
   const [activeTab,        setActiveTab]        = useState('overview');
   const [homeAirport,      setHomeAirport]      = useState(() => DEMO_MODE ? 'JFK' : (localStorage.getItem('sarif_home') || ''));
   const [citizenship,      setCitizenship]      = useState(() => DEMO_MODE ? 'neither' : (localStorage.getItem('sarif_citizenship') || 'neither'));
@@ -106,6 +108,7 @@ export default function App() {
       if (Array.isArray(data.schengenTrips))    setSchengenTrips(data.schengenTrips);
       if (Array.isArray(data.points))           setPoints(data.points);
       if (Array.isArray(data.userDestinations)) setUserDestinations(data.userDestinations);
+      if (Array.isArray(data.customZones))      setCustomZones(data.customZones);
       if (data.homeAirport) { setHomeAirport(data.homeAirport); localStorage.setItem('sarif_home', data.homeAirport); }
       if (data.citizenship) { setCitizenship(data.citizenship); localStorage.setItem('sarif_citizenship', data.citizenship); }
     }).catch(() => { /* server unreachable — use local seed */ })
@@ -117,13 +120,14 @@ export default function App() {
   }, []);
 
   // Persist to server + localStorage on every change (debounced)
-  const persistToServer = useCallback((us, sch, pts, dests) => {
+  const persistToServer = useCallback((us, sch, pts, dests, zones) => {
     if (DEMO_MODE) return;
     // Always update localStorage immediately
     localStorage.setItem('usTrips',          JSON.stringify(us));
     localStorage.setItem('schengenTrips',    JSON.stringify(sch));
     localStorage.setItem('points',           JSON.stringify(pts));
     localStorage.setItem('userDestinations', JSON.stringify(dests));
+    localStorage.setItem('customZones',      JSON.stringify(zones));
     // Debounce server writes
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -132,7 +136,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           usTrips: us, schengenTrips: sch, points: pts, userDestinations: dests,
-          homeAirport, citizenship,
+          customZones: zones, homeAirport, citizenship,
         }),
       }).catch(() => { /* server down — localStorage still has the data */ });
     }, 500);
@@ -140,8 +144,8 @@ export default function App() {
 
   useEffect(() => {
     if (initialLoad.current) return; // don't write back the initial seed
-    persistToServer(usTrips, schengenTrips, points, userDestinations);
-  }, [usTrips, schengenTrips, points, userDestinations, persistToServer]);
+    persistToServer(usTrips, schengenTrips, points, userDestinations, customZones);
+  }, [usTrips, schengenTrips, points, userDestinations, customZones, persistToServer]);
 
   function addUsTrip(trip)            { setUsTrips(p => [...p, trip]); }
   function removeUsTrip(i)            { setUsTrips(p => p.filter((_, idx) => idx !== i)); }
@@ -156,6 +160,21 @@ export default function App() {
   function removeUserDest(key)        { setUserDestinations(p => p.filter(d => d.key !== key)); }
   function addPoint(program)          { setPoints(p => [...p, program]); }
   function removePoint(i)             { setPoints(p => p.filter((_, idx) => idx !== i)); }
+
+  // Custom zone helpers — each zone: { label, trips: [], windowDays, limitDays }
+  function addCustomZone(label, windowDays = 180, limitDays = 90) {
+    setCustomZones(p => [...p, { label, trips: [], windowDays, limitDays }]);
+  }
+  function removeCustomZone(i) { setCustomZones(p => p.filter((_, idx) => idx !== i)); }
+  function addCustomZoneTrip(zoneIdx, trip) {
+    setCustomZones(p => p.map((z, i) => i === zoneIdx ? { ...z, trips: [...z.trips, trip] } : z));
+  }
+  function removeCustomZoneTrip(zoneIdx, tripIdx) {
+    setCustomZones(p => p.map((z, i) => i === zoneIdx ? { ...z, trips: z.trips.filter((_, ti) => ti !== tripIdx) } : z));
+  }
+  function updateCustomZoneTrip(zoneIdx, tripIdx, data) {
+    setCustomZones(p => p.map((z, i) => i === zoneIdx ? { ...z, trips: z.trips.map((t, ti) => ti === tripIdx ? { ...t, ...data } : t) } : z));
+  }
 
   function exportData() {
     const data = {
@@ -374,6 +393,21 @@ export default function App() {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                 {showUsTracking && <YearlyChart trips={usTrips} />}
                 {showSchengenTracking && <SchengenTracker trips={schengenTrips} onAdd={addSchengenTrip} citizenship={citizenship} />}
+              </div>
+            )}
+            {/* Custom zone trackers */}
+            {customZones.length > 0 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {customZones.map((zone, i) => (
+                  <ZoneTracker
+                    key={zone.label}
+                    label={zone.label}
+                    trips={zone.trips}
+                    windowDays={zone.windowDays || 180}
+                    limitDays={zone.limitDays || 90}
+                    onAdd={(trip) => addCustomZoneTrip(i, trip)}
+                  />
+                ))}
               </div>
             )}
             <TripPlanner usTrips={usTrips} schengenTrips={schengenTrips} citizenship={citizenship} />
