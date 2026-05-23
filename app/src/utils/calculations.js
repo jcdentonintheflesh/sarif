@@ -14,6 +14,8 @@ export function daysInWindow(trips, windowStart, windowEnd) {
   for (const trip of trips) {
     const arrival = parseISO(trip.arrival);
     const departure = trip.departure ? parseISO(trip.departure) : today();
+    // Skip trips entirely outside the window
+    if (departure < windowStart || arrival > windowEnd) continue;
     const lo = clamp(arrival, windowStart, windowEnd);
     const hi = clamp(departure, windowStart, windowEnd);
     const days = differenceInDays(hi, lo) + 1;
