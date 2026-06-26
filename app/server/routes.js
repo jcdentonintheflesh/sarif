@@ -8,6 +8,33 @@ const MAX_POINTS    = 50;
 const MAX_DESTS     = 100;
 const VALID_CITIZENSHIP = new Set(['us', 'eu', 'both', 'neither']);
 
+// ── Travelpayouts / Aviasales affiliate links ───────────────────────────────
+// Cash-fare results link out to Aviasales with an affiliate marker, so any
+// booking made in the session earns a referral commission — at no extra cost
+// to the user. The marker is a PUBLIC attribution tag (it appears in every
+// outbound URL), NOT a secret like the API token, so it is committed
+// intentionally and ships in every build (desktop, Docker, source). That is
+// what lets the distributed app monetize bookings from all users, not just the
+// person who happens to have a local .env. Self-hosters can redirect
+// commissions to their own account by setting TRAVELPAYOUTS_MARKER in .env.
+const DEFAULT_AFFILIATE_MARKER = '708033';
+
+// Aviasales search deep-link format: ORIGIN + DDMM + DESTINATION + passengers,
+// e.g. JFK→LHR on 2026-10-15 one-way for 1 adult => /search/JFK1510LHR1
+function affiliateLink(origin, destination, date) {
+  const o = String(origin || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  const d = String(destination || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  if (o.length < 3 || d.length < 3) return null;
+  let seg = o;
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [, mm, dd] = date.split('-');
+    seg += dd + mm;
+  }
+  seg += d + '1'; // 1 adult
+  const marker = process.env.TRAVELPAYOUTS_MARKER || DEFAULT_AFFILIATE_MARKER;
+  return `https://www.aviasales.com/search/${seg}?marker=${encodeURIComponent(marker)}`;
+}
+
 function sanitizeString(val, maxLen = 100) {
   if (typeof val !== 'string') return '';
   return val.slice(0, maxLen).replace(/[^\w\s\-.,/()]/g, '');
@@ -250,17 +277,21 @@ export function attachRoutes(app, { dataPath, keysPath }) {
       }));
 
       const all = results.flat();
-      if (!all.length) return res.json({ prices: [] });
+      if (!all.length) return res.json({ prices: [], searchUrl: affiliateLink(origin, destination) });
 
-      const prices = all.map(f => ({
-        price:    Math.round(f.price),
-        currency: 'USD',
-        date:     f.departure_at?.slice(0, 10),
-        stops:    f.number_of_changes || 0,
-        airlines: [f.airline].filter(Boolean),
-      })).sort((a, b) => a.price - b.price).slice(0, 5);
+      const prices = all.map(f => {
+        const date = f.departure_at?.slice(0, 10);
+        return {
+          price:    Math.round(f.price),
+          currency: 'USD',
+          date,
+          stops:    f.number_of_changes || 0,
+          airlines: [f.airline].filter(Boolean),
+          bookUrl:  affiliateLink(origin, destination, date),
+        };
+      }).sort((a, b) => a.price - b.price).slice(0, 5);
 
-      return res.json({ prices, note: 'economy fares — use as cash baseline' });
+      return res.json({ prices, searchUrl: affiliateLink(origin, destination), note: 'economy fares — use as cash baseline' });
     } catch (e) {
       console.error('[/api/cash]', e.message, e.stack);
       return res.status(500).json({ error: true, message: e.message });
@@ -328,6 +359,7 @@ export function attachRoutes(app, { dataPath, keysPath }) {
           stops:    it.legs?.[0]?.stopCount || 0,
           airlines: (it.legs?.[0]?.carriers?.marketing || []).map(c => c.name),
           duration: it.legs?.[0]?.durationInMinutes ? Math.round(it.legs[0].durationInMinutes / 60) + 'h' : null,
+          bookUrl:  affiliateLink(origin, destination, searchDate),
         })).filter(p => p.price > 0);
       }));
 
@@ -337,7 +369,7 @@ export function attachRoutes(app, { dataPath, keysPath }) {
         .sort((a, b) => a.price - b.price)
         .slice(0, 6);
 
-      return res.json({ prices });
+      return res.json({ prices, searchUrl: affiliateLink(origin, destination) });
     } catch (e) {
       console.error('[/api/cashbiz]', e.message);
       return res.status(500).json({ error: true, message: e.message });

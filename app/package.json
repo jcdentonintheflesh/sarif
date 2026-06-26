@@ -10,7 +10,8 @@
     "server": "node server/index.js",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "stats": "node scripts/stats.mjs"
   },
   "dependencies": {
 "concurrently": "^9.2.1",

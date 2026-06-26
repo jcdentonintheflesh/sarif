@@ -15,3 +15,6 @@ node_modules/
 
 # But allow committed screenshots in screenshots/
 !screenshots/
+
+# Personal trip data backup (never commit)
+trip-history-backup.json

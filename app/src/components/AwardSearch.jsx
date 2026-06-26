@@ -178,14 +178,18 @@ function CabinFareRow({ label, prices, loading, highlight }) {
       {prices?.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {prices.map((p, i) => (
-            <div key={i} className={`rounded-xl border px-3 py-2 ${i === 0 && highlight ? 'border-emerald-500/40 bg-emerald-500/8' : 'border-white/10 bg-white/3'}`}>
-              <div className="text-lg font-semibold font-mono text-white">${p.price.toLocaleString()}</div>
+            <a key={i} href={p.bookUrl || undefined} target="_blank" rel="noopener noreferrer sponsored"
+              className={`group rounded-xl border px-3 py-2 block transition-colors ${p.bookUrl ? 'hover:border-blue-500/40' : ''} ${i === 0 && highlight ? 'border-emerald-500/40 bg-emerald-500/8' : 'border-white/10 bg-white/3'}`}>
+              <div className="text-lg font-semibold font-mono text-white flex items-center gap-1">
+                ${p.price.toLocaleString()}
+                {p.bookUrl && <ExternalLink size={11} className="text-slate-600 group-hover:text-blue-400 transition-colors" />}
+              </div>
               <div className="text-xs text-slate-500">
                 {p.date ? fmtDate(p.date) : '—'}
                 {p.stops === 0 ? <span className="ml-1 text-emerald-400">direct</span> : <span className="ml-1">{p.stops} stop{p.stops > 1 ? 's' : ''}</span>}
               </div>
               {p.airlines?.length > 0 && <div className="text-xs text-slate-600">{p.airlines.slice(0, 2).join(', ')}</div>}
-            </div>
+            </a>
           ))}
         </div>
       )}
@@ -445,6 +449,8 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
   const [cashPrice,       setCashPrice]       = useState('');
   const [cashPrices,      setCashPrices]      = useState(null);
   const [cashLoading,     setCashLoading]     = useState(false);
+  // Route-level affiliate "search all fares" link (Aviasales, set by the server)
+  const [cashSearchUrl,   setCashSearchUrl]   = useState(null);
 
   // Business cash prices (Sky Scrapper via RapidAPI)
   const [cashBizPrices,   setCashBizPrices]   = useState(null);
@@ -462,6 +468,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
       const res  = await apiFetch(`/api/cash?origin=${o}&destination=${d}&cabin=${cab}`);
       const data = await res.json();
       setServerDown(false);
+      if (data.searchUrl) setCashSearchUrl(data.searchUrl);
       if (data.error) { setCashPrices([]); return; }
       const prices = data.prices || [];
       setCashPrices(prices);
@@ -497,6 +504,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     setRetResults(null);
     setCashPrice('');
     setCashPrices(null);
+    setCashSearchUrl(null);
     setCashBizPrices(null);
     setCashPEPrices(null);
     setProgramFilter('all');
@@ -778,11 +786,19 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
               <DollarSign size={13} className="text-slate-400" />
               <span className="text-sm font-semibold text-slate-300">Cash fares — {origin} → {destination}</span>
             </div>
-            <a href={`https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
-              Google Flights <ExternalLink size={10} />
-            </a>
+            <div className="flex items-center gap-3">
+              {cashSearchUrl && (
+                <a href={cashSearchUrl} target="_blank" rel="noopener noreferrer sponsored"
+                  className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-lg transition-colors">
+                  Search & book on Aviasales <ExternalLink size={10} />
+                </a>
+              )}
+              <a href={`https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+                Google Flights <ExternalLink size={10} />
+              </a>
+            </div>
           </div>
 
           {/* Business prices */}
@@ -833,9 +849,11 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
                 {cashPrices.map((p, i) => {
                   const gflUrl = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}${p.date ? '+on+' + p.date : ''}`;
                   return (
-                    <a key={i} href={gflUrl} target="_blank" rel="noopener noreferrer"
-                      className={`rounded-xl border px-3 py-2 block hover:border-blue-500/40 transition-colors ${i === 0 && cabin === 'Y' ? 'border-emerald-500/40 bg-emerald-500/8' : 'border-white/10 bg-white/3'}`}>
-                      <div className="text-base font-semibold font-mono text-white">${p.price}</div>
+                    <a key={i} href={p.bookUrl || gflUrl} target="_blank" rel="noopener noreferrer sponsored"
+                      className={`group rounded-xl border px-3 py-2 block hover:border-blue-500/40 transition-colors ${i === 0 && cabin === 'Y' ? 'border-emerald-500/40 bg-emerald-500/8' : 'border-white/10 bg-white/3'}`}>
+                      <div className="text-base font-semibold font-mono text-white flex items-center gap-1">${p.price}
+                        <ExternalLink size={10} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
+                      </div>
                       <div className="text-xs text-slate-500">
                         {p.date ? fmtDate(p.date) : '—'}
                         {p.stops === 0 && <span className="ml-1 text-emerald-400">direct</span>}
@@ -851,6 +869,10 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
               <p className="text-xs text-slate-600">No economy data for this route</p>
             )}
           </div>
+
+          <p className="text-xs text-slate-600 border-t border-white/5 pt-3">
+            Fare cards and the Aviasales button are affiliate links — booking through them helps fund Sarif's development at no extra cost to you.
+          </p>
         </div>
       )}
 

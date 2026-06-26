@@ -20,7 +20,9 @@ import AwardSearch from './components/AwardSearch';
 import TripPlanner from './components/TripPlanner';
 import SetupModal from './components/SetupModal';
 import OnboardingBanner from './components/OnboardingBanner';
-import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings, Shield, Flag, Fingerprint, Globe2 } from 'lucide-react';
+import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings, Shield, Flag, Fingerprint, Globe2, MessageSquare, Star } from 'lucide-react';
+
+const GITHUB_REPO = 'https://github.com/jcdentonintheflesh/sarif';
 
 const TABS = [
   { id: 'overview',  label: 'Overview',        icon: BarChart2  },
@@ -492,11 +494,22 @@ export default function App() {
 
       {/* Footer */}
       <div className="border-t border-white/5 px-6 py-4 mt-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-xs text-slate-600">
-          <span>Built by</span>
-          <a href="https://x.com/vxdenton" target="_blank" rel="noopener noreferrer"
-            className="text-slate-500 hover:text-slate-300 transition-colors">
-            @vxdenton
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 text-xs text-slate-600 flex-wrap">
+          <span className="flex items-center gap-1">
+            Built by
+            <a href="https://x.com/vxdenton" target="_blank" rel="noopener noreferrer"
+              className="text-slate-500 hover:text-slate-300 transition-colors">
+              @vxdenton
+            </a>
+          </span>
+          <span className="text-slate-700">·</span>
+          <a href={`${GITHUB_REPO}/discussions`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors">
+            <MessageSquare size={11} /> Feedback &amp; Q&amp;A
+          </a>
+          <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors">
+            <Star size={11} /> Star on GitHub
           </a>
         </div>
       </div>

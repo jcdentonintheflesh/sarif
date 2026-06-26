@@ -114,6 +114,10 @@ API keys are stored in a separate file from trip data, so exporting a backup nev
 - `docker compose down -v` (removes volumes — don't use `-v` unless you mean it)
 - Uninstalling the desktop app without exporting first
 
+## Affiliate links
+
+Cash-fare results link out to [Aviasales](https://www.aviasales.com) (via Travelpayouts). Bookings made through those links earn a small referral commission for the maintainer — at **no extra cost to you**, and it never changes the price you pay. This is what funds Sarif's development and API bills. The affiliate marker is a public attribution tag (you can see it in the link's `?marker=` parameter) and ships in every build. If you're self-hosting and want bookings credited to your own account instead, set `TRAVELPAYOUTS_MARKER` in `app/.env`. No personal data is ever sent — these are plain outbound links you choose to click.
+
 ## Stack
 
 React 19, Vite, Tailwind CSS, Recharts, Express (API + data persistence), Electron (desktop), Docker
