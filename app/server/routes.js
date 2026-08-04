@@ -188,10 +188,17 @@ export function attachRoutes(app, { dataPath, keysPath }) {
     const KEY   = req.headers['x-seats-key'] || process.env.SEATS_API_KEY;
     const query = new URLSearchParams(req.query);
     query.set('take', '300');
-    // Strip malformed date params before they hit Seats.aero
+    // Seats.aero requires start_date and end_date as a PAIR — a lone bound is
+    // rejected with a misleading "must be formatted as YYYY-MM-DD" error. Only
+    // forward the dates when both are valid; otherwise drop both. No filtering
+    // is lost: the client re-applies the user's date range to the results.
     const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
-    if (query.has('start_date') && !isDate(query.get('start_date'))) query.delete('start_date');
-    if (query.has('end_date')   && !isDate(query.get('end_date')))   query.delete('end_date');
+    const validRange = query.has('start_date') && isDate(query.get('start_date')) &&
+                       query.has('end_date')   && isDate(query.get('end_date'));
+    if (!validRange) {
+      query.delete('start_date');
+      query.delete('end_date');
+    }
     const cacheKey = query.toString();
 
     const cached = searchCache.get(cacheKey);
