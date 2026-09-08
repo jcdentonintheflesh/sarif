@@ -95,10 +95,10 @@ export default function TripPlanner({ usTrips, schengenTrips, citizenship }) {
   const projected = calcStats(allUs, allSch, refDate);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-5">
+    <div className="term-panel p-5 space-y-5">
       <div className="flex items-center gap-2">
         <CalendarDays size={15} className="text-blue-400 shrink-0" />
-        <h3 className="text-base font-semibold text-white">Trip Planner</h3>
+        <h3 className="section-title">Trip Planner</h3>
         <span className="text-xs text-slate-500">plan ahead · see limit impact</span>
       </div>
 
@@ -218,7 +218,7 @@ export default function TripPlanner({ usTrips, schengenTrips, citizenship }) {
 
       {/* Stats */}
       {citizenship !== 'both' && (
-        <div className="rounded-xl bg-white/3 border border-white/5 p-4 space-y-4">
+        <div className="surface-2 p-4 space-y-4">
           {hasPlanned && (
             <div className="flex items-center gap-2 text-xs text-slate-500 pb-1">
               <span>Today</span>
@@ -243,7 +243,7 @@ export default function TripPlanner({ usTrips, schengenTrips, citizenship }) {
             </div>
           )}
 
-          {citizenship === 'neither' && <div className="border-t border-white/5" />}
+          {citizenship === 'neither' && <div className="divider" />}
 
           {/* Schengen */}
           {citizenship !== 'eu' && (

@@ -21,8 +21,30 @@ import TripPlanner from './components/TripPlanner';
 import SetupModal from './components/SetupModal';
 import OnboardingBanner from './components/OnboardingBanner';
 import { Plane, BarChart2, CreditCard, Globe, Search, ChevronRight, Settings, Shield, Flag, Fingerprint, Globe2, MessageSquare, Star } from 'lucide-react';
+import { rollingWindowStatus, substantialPresenceTest } from './utils/calculations';
+import CountUp from './components/CountUp';
 
 const GITHUB_REPO = 'https://github.com/jcdentonintheflesh/sarif';
+
+// Terminal status ribbon: shared status coding + readout cell.
+function limitStatus(days, limit) {
+  const remaining = limit - days;
+  if (remaining <= 0) return { cls: 'glow-alert', glyph: '▲', word: 'AT LIMIT' };
+  if (remaining <= 15) return { cls: 'glow-warn', glyph: '▲', word: `${remaining}D LEFT` };
+  return { cls: 'glow-ok', glyph: '●', word: 'OK' };
+}
+
+function RibbonCell({ label, num, suffix, value, status }) {
+  return (
+    <div className="flex items-baseline gap-2.5 px-4 py-2.5 whitespace-nowrap shrink-0">
+      <span className="font-display font-medium text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</span>
+      <span className={`stat text-sm font-semibold ${status.cls}`}>
+        {num != null ? <><CountUp value={num} />{suffix}</> : value}
+      </span>
+      {status.word && <span className={`font-display font-medium text-[10px] uppercase tracking-[0.1em] ${status.cls}`}>{status.glyph} {status.word}</span>}
+    </div>
+  );
+}
 
 const TABS = [
   { id: 'overview',  label: 'Overview',        icon: BarChart2  },
@@ -78,6 +100,18 @@ export default function App() {
   const visibleTabs = TABS.filter(t => !hiddenTabs.includes(t.id));
   const showUsTracking = citizenship !== 'us' && citizenship !== 'both';
   const showSchengenTracking = citizenship !== 'eu' && citizenship !== 'both';
+
+  // Terminal status ribbon metrics (same calc utils as the detail cards).
+  const usStatus = rollingWindowStatus(usTrips, 180, 90);
+  const spt = substantialPresenceTest(usTrips);
+  const schStatus = rollingWindowStatus(schengenTrips, 180, 90);
+  const totalPts = points.reduce((s, p) => s + (p.balance || 0), 0);
+  const fmtPts = totalPts >= 1000 ? (totalPts / 1000).toFixed(0) + 'k' : String(totalPts);
+  const sptStatus = spt.triggers
+    ? { cls: 'glow-alert', glyph: '▲', word: 'TRIGGERED' }
+    : spt.score >= 150
+      ? { cls: 'glow-warn', glyph: '▲', word: 'WATCH' }
+      : { cls: 'glow-ok', glyph: '●', word: 'OK' };
 
   // Redirect to overview if the current tab gets hidden after a citizenship change
   useEffect(() => {
@@ -272,7 +306,7 @@ export default function App() {
     (usTrips.length > 0 && usTrips[0]?.arrival === US_TRIPS[0]?.arrival);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-200">
+    <div className="min-h-screen text-slate-200">
 
       {/* Setup modal — first run or manually opened */}
       {(!setupDone || showSetup) && (
@@ -297,33 +331,29 @@ export default function App() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="border-b border-white/5 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      {/* Command bar */}
+      <div className="border-b border-line px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <svg width="130" height="28" viewBox="0 0 130 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Hex mark */}
+            <svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
               <polygon points="13,1.5 23.5,7.5 23.5,19.5 13,25.5 2.5,19.5 2.5,7.5"
-                stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+                stroke="#2f97d8" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
               <polygon points="13,6 19.5,9.5 19.5,17.5 13,21 6.5,17.5 6.5,9.5"
-                fill="#3b82f6" fillOpacity="0.1"/>
-              <line x1="2.5" y1="7.5" x2="23.5" y2="19.5" stroke="#3b82f6" strokeWidth="0.75" opacity="0.35"/>
-              <line x1="23.5" y1="7.5" x2="2.5" y2="19.5" stroke="#3b82f6" strokeWidth="0.75" opacity="0.35"/>
-              <circle cx="13" cy="13.5" r="2.5" fill="#3b82f6"/>
-              {/* Vertical rule */}
-              <line x1="34" y1="5" x2="34" y2="23" stroke="white" strokeWidth="0.75" opacity="0.1"/>
-              {/* Wordmark */}
-              <text x="42" y="19"
-                fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
-                fontSize="14" fontWeight="600" letterSpacing="4" fill="white">
-                <tspan fill="#60a5fa" fontWeight="800" fontSize="17" dy="1">S</tspan><tspan dy="-1">ARIF</tspan>
-              </text>
+                fill="#2f97d8" fillOpacity="0.1"/>
+              <circle cx="13" cy="13.5" r="2.4" fill="#82c8f0"/>
             </svg>
-            <span className="text-xs text-slate-600 font-medium tracking-widest uppercase hidden sm:block">Travel Intelligence</span>
+            <div className="flex items-center gap-2.5">
+              <span className="font-display text-lg font-semibold tracking-[0.2em] text-white leading-none">SARIF</span>
+              <span className="hidden sm:block h-3.5 w-px bg-white/[0.14]"></span>
+              <span className="hidden sm:block font-display font-medium text-[10px] uppercase tracking-[0.2em] text-slate-500">Travel Intelligence</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
+            <span className="hidden sm:flex items-center gap-1.5 font-display font-medium text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <span className="live-dot"></span> Live
+            </span>
             {homeAirport && (
-              <span className="text-xs font-mono text-slate-500 bg-white/5 border border-white/8 px-2.5 py-1 rounded-lg">
+              <span className="surface-2 font-mono text-[11px] tracking-wide text-slate-300 px-2.5 py-1">
                 {homeAirport}
               </span>
             )}
@@ -331,19 +361,19 @@ export default function App() {
               const badge = CITIZENSHIP_BADGES[citizenship] || CITIZENSHIP_BADGES.neither;
               const Icon = badge.icon;
               return (
-                <span className={`flex items-center gap-1.5 text-xs font-medium ${badge.color} bg-white/5 px-2.5 py-1 rounded-full`}>
+                <span className={`surface-2 flex items-center gap-1.5 text-xs font-medium ${badge.color} px-2.5 py-1`}>
                   <Icon size={11} />
                   {badge.label}
                 </span>
               );
             })()}
-            <span className="text-xs text-slate-600">
-              {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+            <span className="hidden md:block font-mono text-xs text-slate-500 tabular-nums">
+              {new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
             </span>
             <button
               onClick={() => setShowSetup(true)}
               title="Setup & settings"
-              className="text-slate-600 hover:text-slate-300 transition-colors"
+              className="text-slate-500 hover:text-blue-400 transition-colors ml-1"
             >
               <Settings size={15} />
             </button>
@@ -351,19 +381,32 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-white/5 px-6">
-        <div className="max-w-7xl mx-auto flex gap-1">
+      {/* Live status ribbon */}
+      {(usTrips.length > 0 || schengenTrips.length > 0 || points.length > 0) && (
+        <div className="border-b border-line px-6 bg-white/[0.015]">
+          <div className="max-w-7xl mx-auto flex items-stretch divide-x divide-white/[0.07] overflow-x-auto no-scrollbar">
+            {showUsTracking && <RibbonCell label="US 180d" num={usStatus.days} suffix={`/${usStatus.limitDays}`} status={limitStatus(usStatus.days, usStatus.limitDays)} />}
+            {showUsTracking && <RibbonCell label="SPT · IRS" num={spt.score} suffix="/183" status={sptStatus} />}
+            {showSchengenTracking && <RibbonCell label="Schengen" num={schStatus.days} suffix={`/${schStatus.limitDays}`} status={limitStatus(schStatus.days, schStatus.limitDays)} />}
+            <RibbonCell label="Points" value={fmtPts} status={{ cls: 'text-blue-400', glyph: '', word: '' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Nav */}
+      <div className="border-b border-line px-6">
+        <div className="max-w-7xl mx-auto flex gap-0.5 overflow-x-auto no-scrollbar">
           {visibleTabs.map(tab => {
             const Icon = tab.icon;
+            const active = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm transition-colors border-b-2 -mb-px ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-white bg-white/5 rounded-t-lg'
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 -mb-px font-display font-medium text-xs uppercase tracking-[0.13em] whitespace-nowrap transition-colors focus:outline-none ${
+                  active
+                    ? 'border-blue-500 text-white'
                     : 'border-transparent text-slate-500 hover:text-slate-300'
                 }`}>
-                <Icon size={14} />
+                <Icon size={13} className={active ? 'text-blue-400' : ''} />
                 {tab.label}
               </button>
             );
@@ -414,33 +457,33 @@ export default function App() {
             )}
             <TripPlanner usTrips={usTrips} schengenTrips={schengenTrips} citizenship={citizenship} />
             {/* Compact points summary */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-white">Points & Miles</h3>
+            <div className="surface p-5 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="section-title">Points &amp; Miles</span>
                 <button onClick={() => setActiveTab('points')}
-                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors shrink-0">
                   Full breakdown <ChevronRight size={12} />
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {points.map((p, i) => (
-                  <div key={i} className="rounded-xl bg-white/5 border border-white/8 p-3 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-                      <span className="text-xs text-slate-400 truncate">{p.program}</span>
+                  <div key={i} className="surface-2 px-4 py-3.5 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                      <span className="text-[11px] text-slate-500 truncate">{p.program}</span>
                     </div>
-                    <div className="text-lg font-semibold font-mono text-white">
+                    <div className="stat text-2xl font-semibold text-white leading-none">
                       {p.balance != null ? (p.balance >= 1000 ? (p.balance / 1000).toFixed(0) + 'k' : p.balance) : '—'}
-                    </div>
-                    <div className="h-1 rounded-full bg-white/10">
-                      <div className="h-1 rounded-full" style={{ backgroundColor: p.color, width: p.balance ? `${Math.min(100, (p.balance / 200000) * 100)}%` : '0%', opacity: 0.7 }} />
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-600 border-t border-white/5 pt-3">
-                {points.reduce((s, p) => s + (p.balance || 0), 0).toLocaleString()} total points
-              </p>
+              <div className="divider pt-3 flex items-center justify-between text-xs">
+                <span className="text-slate-500">Total</span>
+                <span className="stat text-slate-300">
+                  {points.reduce((s, p) => s + (p.balance || 0), 0).toLocaleString()} pts
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -493,7 +536,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-white/5 px-6 py-4 mt-8">
+      <div className="border-t border-line px-6 py-5 mt-8">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 text-xs text-slate-600 flex-wrap">
           <span className="flex items-center gap-1">
             Built by

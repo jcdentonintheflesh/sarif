@@ -2,26 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  background-color: #0a0a0f;
-  color: #e2e8f0;
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+/* ── Self-hosted fonts (bundled, no external CDN — offline + private) ───────── */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plex-mono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plex-mono-500.woff2') format('woff2');
+  font-weight: 500 700;
+  font-display: swap;
 }
 
-/* Slim dark scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+:root {
+  --surface-0: #050505;   /* near-black page */
+  --surface-1: #0b0b0c;   /* panel */
+  --surface-2: #151517;   /* raised */
+  --border: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.34);
+  --text: #fafafa;        /* near-white */
+  --text-muted: #9a9a9a;
+  --text-faint: #6a6a6a;
+  --accent: #2f97d8;
+  --ok: #3ddc84;
+  --warn: #f5c451;
+  --alert: #ff5d55;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+body {
+  margin: 0;
+  background-color: var(--surface-0);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+
+/* Brutalist: everything square. Overrides any rounded utility, app-wide. */
+*, *::before, *::after { border-radius: 0 !important; }
+
+@layer base {
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+
+@layer components {
+  /* Flat square panel: border only. Fades in on mount; on hover the top
+     edge lights to the accent (crisp, not glowy). */
+  .term-panel {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    animation: sarif-in 0.3s ease-out both;
+  }
+  .term-panel:hover {
+    border-color: var(--border-strong);
+    box-shadow: inset 0 2px 0 var(--accent);
+  }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .term-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .surface-2 {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+  .stat {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .divider { border-top: 1px solid var(--border); }
+
+  /* Status — solid, punchy against black. No glow (flat/brutalist). */
+  .glow-ok { color: var(--ok); }
+  .glow-warn { color: var(--warn); }
+  .glow-alert { color: var(--alert); }
 }
+
+/* Motion, kept minimal: a status pulse and a soft mount fade. */
+@keyframes sarif-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes sarif-in { from { opacity: 0; } to { opacity: 1; } }
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--ok);
+  animation: sarif-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .term-panel { animation: none; }
+}
+
+/* Inverted selection — brutalist. */
+::selection { background: #fafafa; color: #000; }
+
+/* Square hairline scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }

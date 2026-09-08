@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle, MapPin } from 'lucide-react';
 function WindowBar({ label, sublabel, win, urgent }) {
   const overLimit = win.days >= win.limitDays;
   const nearLimit = win.pct >= 80;
-  const statusColor = overLimit ? 'text-red-400' : nearLimit ? 'text-yellow-400' : 'text-emerald-400';
+  const statusColor = overLimit ? 'glow-alert' : nearLimit ? 'glow-warn' : 'glow-ok';
   const barColor = overLimit ? 'bg-red-500' : nearLimit ? 'bg-yellow-500' : 'bg-emerald-500';
 
   return (
@@ -15,7 +15,7 @@ function WindowBar({ label, sublabel, win, urgent }) {
           <span className="text-slate-300 font-medium">{label}</span>
           {sublabel && <span className="text-slate-500 text-xs ml-2">{sublabel}</span>}
         </div>
-        <span className={`font-mono font-semibold ${statusColor}`}>
+        <span className={`stat font-semibold ${statusColor}`}>
           {win.days} <span className="text-slate-500 font-normal">/ {win.limitDays} days</span>
         </span>
       </div>
@@ -50,16 +50,15 @@ export default function StatusBar({ trips }) {
 
   const inUS = !!stay;
   const anyUrgent = inUS && (win180.pct >= 80 || win365.pct >= 80);
-  const borderColor = !inUS ? 'border-white/10' : win180.pct >= 90 ? 'border-red-500/30' : win180.pct >= 70 ? 'border-yellow-500/30' : 'border-emerald-500/30';
 
   return (
-    <div className={`rounded-2xl border ${borderColor} bg-white/5 backdrop-blur p-4 space-y-3`}>
+    <div className="term-panel p-4 space-y-3">
       {/* Header + stats row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-slate-400" />
-          <span className="text-base font-semibold text-white">US Presence Tracker</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">VWP / ESTA / B1-B2</span>
+          <MapPin size={15} className="text-slate-400" />
+          <span className="section-title">US Presence Tracker</span>
+          <span className="surface-2 font-mono text-[10px] tracking-wider text-slate-400 px-2 py-0.5">VWP / ESTA / B1-B2</span>
         </div>
         {anyUrgent ? (
           <div className="flex items-center gap-1.5 text-yellow-400 text-sm">
@@ -117,13 +116,13 @@ export default function StatusBar({ trips }) {
       />
 
       {/* Substantial Presence Test — compact */}
-      <div className="border-t border-white/5 pt-3 space-y-1.5">
+      <div className="divider pt-3 space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-300">Substantial Presence Test</span>
             <span className="text-xs text-slate-500">IRS tax residency</span>
           </div>
-          <div className={`text-sm font-mono font-semibold ${spt.triggers ? 'text-red-400' : spt.score >= 150 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+          <div className={`text-sm stat font-semibold ${spt.triggers ? 'glow-alert' : spt.score >= 150 ? 'glow-warn' : 'glow-ok'}`}>
             {spt.score} <span className="text-slate-500 font-normal text-xs">/ 183</span>
           </div>
         </div>

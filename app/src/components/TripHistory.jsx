@@ -90,9 +90,9 @@ export default function TripHistory({
   const title = combined ? 'Trip History' : (zone === 'Schengen' ? 'Schengen Trip History' : 'US Trip History');
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+    <div className="term-panel p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <h3 className="section-title">{title}</h3>
         <div className="flex items-center gap-2">
           {totalTrips > 0 && onClear && (
             confirmClear ? (
@@ -133,7 +133,7 @@ export default function TripHistory({
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white/5 rounded-xl p-4 space-y-3 border border-white/10">
+        <form onSubmit={handleSubmit} className="surface-2 p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 block mb-1">Arrival date *</label>

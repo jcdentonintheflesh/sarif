@@ -224,7 +224,7 @@ function ResultsSection({ available, cabin, origin, destination, cashPrice, prog
 
   if (Object.keys(bestByProgram).length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-6 space-y-2 text-center">
+      <div className="surface-2 p-6 space-y-2 text-center">
         <div className="text-slate-400 text-sm">No {CABINS.find(c => c.key === cabin)?.label} availability — {origin} → {destination}</div>
         <div className="text-slate-600 text-xs">Try a different cabin, adjust the date range, or uncheck the transferable filter.</div>
         <div className="text-xs text-slate-600 pt-1">
@@ -237,7 +237,7 @@ function ResultsSection({ available, cabin, origin, destination, cashPrice, prog
   return (
     <div className="space-y-3">
       {/* Summary cards */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="term-panel p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-slate-300">
             {CABINS.find(c => c.key === cabin)?.label} · {origin} → {destination}
@@ -306,7 +306,7 @@ function ResultsSection({ available, cabin, origin, destination, cashPrice, prog
 
       {/* Full table */}
       {sorted.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+        <div className="term-panel overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -570,12 +570,12 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
     <div className="space-y-4">
 
       {/* ── Search form ─────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+      <div className="term-panel overflow-hidden">
 
         {/* Section A: Route & Search */}
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="section-title">
               Award Search <span className="text-xs font-normal text-slate-500 ml-1">powered by Seats.aero</span>
             </h3>
             <div className="flex items-center gap-1">
@@ -677,7 +677,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
         </div>
 
         {/* Divider */}
-        <div className="border-t border-white/5" />
+        <div className="divider" />
 
         {/* Section B: Filters & Analysis */}
         <div className="p-5 space-y-4">
@@ -760,7 +760,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
       )}
 
       {loading && (
-        <div className="rounded-xl border border-white/5 bg-white/3 p-8 text-center text-slate-500 text-sm">
+        <div className="surface-2 p-8 text-center text-slate-500 text-sm">
           Searching {isRoundTrip ? 'both directions' : 'across all programs'}...
         </div>
       )}
@@ -780,7 +780,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
 
       {/* ── Cash fares card — only render once data resolves ─────────────── */}
       {hasCashData && !loading && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
+        <div className="term-panel p-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <DollarSign size={13} className="text-slate-400" />
@@ -870,7 +870,7 @@ export default function AwardSearch({ homeAirport = 'JFK', points = [], destinat
             )}
           </div>
 
-          <p className="text-xs text-slate-600 border-t border-white/5 pt-3">
+          <p className="text-xs text-slate-600 divider pt-3">
             Fare cards and the Aviasales button are affiliate links — booking through them helps fund Sarif's development at no extra cost to you.
           </p>
         </div>

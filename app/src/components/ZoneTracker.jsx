@@ -10,9 +10,9 @@ export default function ZoneTracker({ label, trips, onAdd, windowDays = 180, lim
   const activeTrip = trips.find(t => !t.departure);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+    <div className="term-panel p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">{label}</h3>
+        <h3 className="section-title">{label}</h3>
         <span className="text-xs text-slate-500">{limitDays}/{windowDays} day rule</span>
       </div>
 

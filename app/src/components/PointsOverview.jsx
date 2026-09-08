@@ -57,7 +57,7 @@ function AddProgramForm({ existing, onAdd, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="surface-2 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-slate-400 block mb-1">Program *</label>
@@ -115,9 +115,9 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
     <div className="space-y-5">
 
       {/* ── Points & Miles ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+      <div className="term-panel p-5 space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-base font-semibold text-white">Points & Miles</h3>
+          <h3 className="section-title">Points & Miles</h3>
           <span className="text-xs text-slate-500">{total.toLocaleString()} total</span>
         </div>
         <div className="space-y-3">
@@ -169,7 +169,7 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
           />
         ) : (
           <button onClick={() => setShowAddProgram(true)}
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors border-t border-white/5 pt-3 w-full">
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors divider pt-3 w-full">
             <Plus size={13} />
             Add program
           </button>
@@ -178,8 +178,8 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
 
       {/* ── Transfer Partners ──────────────────────────────────────────── */}
       {transferable.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
-          <h3 className="text-base font-semibold text-white">Transfer Partners</h3>
+        <div className="term-panel p-5 space-y-4">
+          <h3 className="section-title">Transfer Partners</h3>
           <p className="text-xs text-slate-500">Your transferable currencies and where they can go (1:1 unless noted).</p>
 
           <div className="space-y-4">
@@ -206,7 +206,7 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
             })}
           </div>
 
-          <p className="text-xs text-slate-600 border-t border-white/5 pt-3">
+          <p className="text-xs text-slate-600 divider pt-3">
             Edit transfer partner mappings in <code className="text-slate-400">travelHistory.js</code> → <code className="text-slate-400">TRANSFER_PARTNERS</code>
           </p>
         </div>
@@ -214,12 +214,12 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
 
       {/* ── Airline Programs ───────────────────────────────────────────── */}
       {airline.length > 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
-          <h3 className="text-base font-semibold text-white">Airline Programs</h3>
+        <div className="term-panel p-5 space-y-3">
+          <h3 className="section-title">Airline Programs</h3>
           <p className="text-xs text-slate-500">Direct earn programs — miles from flying, not transferable from credit cards.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {airline.map((p, i) => (
-              <div key={i} className="rounded-xl bg-white/5 border border-white/8 p-3 space-y-1">
+              <div key={i} className="surface-2 p-3 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
                   <span className="text-xs text-slate-300 font-medium truncate">{p.program}</span>
@@ -238,7 +238,7 @@ export default function PointsOverview({ points, onUpdate, onAddPoint, onRemoveP
 
       {/* ── Quick tips ─────────────────────────────────────────────────── */}
       {total >= 50000 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-2">
+        <div className="term-panel p-5 space-y-2">
           <h3 className="text-sm font-semibold text-slate-300">Tips</h3>
           <ul className="space-y-1.5 text-xs text-slate-500">
             <li>Transferable points (Amex MR, Chase UR) are most valuable for business class awards — typically 5–10¢/pt vs 1¢/pt for statement credits.</li>

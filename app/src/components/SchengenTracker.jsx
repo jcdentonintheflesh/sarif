@@ -4,16 +4,16 @@ import { Info, Globe, Plus, AlertTriangle } from 'lucide-react';
 
 export default function SchengenTracker({ trips, onAdd, citizenship = 'neither' }) {
   const win = rollingWindowStatus(trips);
-  const statusColor = win.pct >= 90 ? 'text-red-400' : win.pct >= 70 ? 'text-yellow-400' : 'text-emerald-400';
+  const statusColor = win.pct >= 90 ? 'glow-alert' : win.pct >= 70 ? 'glow-warn' : 'glow-ok';
   const barColor = win.pct >= 90 ? 'bg-red-500' : win.pct >= 70 ? 'bg-yellow-500' : 'bg-emerald-500';
   const isEmpty = trips.length === 0;
   const isEuCitizen = citizenship === 'eu' || citizenship === 'both';
   const activeTrip = trips.find(t => !t.departure);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+    <div className="term-panel p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white">Schengen Zone</h3>
+        <h3 className="section-title">Schengen Zone</h3>
         <span className="text-xs text-slate-500">90/180 day rule</span>
       </div>
 
@@ -60,7 +60,7 @@ export default function SchengenTracker({ trips, onAdd, citizenship = 'neither' 
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">180-day window</span>
-            <span className={`font-mono font-semibold ${isEuCitizen ? 'text-slate-500' : statusColor}`}>
+            <span className={`stat font-semibold ${isEuCitizen ? 'text-slate-500' : statusColor}`}>
               {win.days} <span className="text-slate-500">/ 90 days</span>
             </span>
           </div>
@@ -84,7 +84,7 @@ export default function SchengenTracker({ trips, onAdd, citizenship = 'neither' 
         </div>
       )}
 
-      <div className="flex items-start gap-2 bg-white/3 rounded-lg p-3 space-y-1">
+      <div className="flex items-start gap-2 surface-2 p-3 space-y-1">
         <Info size={13} className="text-slate-500 mt-0.5 flex-shrink-0" />
         <div className="space-y-1">
           <p className="text-xs text-slate-500">
