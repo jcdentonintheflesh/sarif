@@ -42,3 +42,12 @@ server/data.json.bak
 .env
 .env.local
 .env.*.local
+
+# Secrets and personal data — repo is public, keep these out
+.env
+.env.*
+!.env.example
+data/
+backups/
+server/data.json
+server/keys.json
